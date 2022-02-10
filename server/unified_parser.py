@@ -6,14 +6,21 @@ import warnings
 import amrlib
 import penman
 import textacy
+import spacy
 import benepar
+from predpatt import PredPatt
 
 from logger import logger
+
+import stanza
+import spacy_stanza
+# stanza.download("en")
+
 
 warnings.filterwarnings('ignore')
 
 # spacy.cli.download("en_core_web_sm")
-# benepar.download('benepar_en3', quiet=True)
+# benepar.download('benepar_cen3', quiet=True)
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
@@ -21,14 +28,15 @@ dirname = os.path.dirname(__file__)
 model_stog_dir = os.path.join(dirname, "models/model_stog")
 
 stog = amrlib.load_stog_model(model_dir=model_stog_dir)
-
 amrlib.setup_spacy_extension()
 
 # Constituency parsing
-en = textacy.load_spacy_lang("en_core_web_sm")
+en = spacy_stanza.load_pipeline("en", processors='tokenize,ner,pos,lemma,depparse')
+
+# en = textacy.load_spacy_lang("en_core_web_sm")
 en.add_pipe('benepar', config={'model': 'benepar_en3'})
 
-# TODO: Add lemmatizer to Berkley Neural Parser pipeline
+nlp = nlp = stanza.Pipeline(lang='en', processors='tokenize,ner,pos,lemma,depparse')
 
 role_dict = {
     "ARG0": "agent",
@@ -39,6 +47,10 @@ role_dict = {
     "ARGN": "modifier"
 }
 
+def udparse(text):
+    doc = nlp(text)
+    docpy = doc.to_dict()
+    return docpy
 
 def get_word_types(sent):
     print("SENT TYPE:", type(sent))
@@ -202,6 +214,7 @@ def extract_sentence_meta(sent: object, out):
         },
         "semparse": {
             "amr": cleanup_tree(sent._.to_amr()[0]),
+            "ud": udparse(sent.text)
         },
         "triples": get_svo_triples(sent),
         "constituency": str(get_constituency(sent)),
@@ -231,14 +244,6 @@ def extract_meta(passage: str, context="default", message=False):
         k = k + 1
 
     return meta
-
-
-def format_constant(txt):
-    """
-    Constants are lowercase
-    """
-    ret = txt.lower().strip('"')
-    return ret
 
 
 def format_clause(txt):
@@ -320,7 +325,10 @@ def generate_clauses(amr_string):
 
 
 def passage2logic(passage, debug=False):
-    doc = textacy.make_spacy_doc(passage, lang=en)
+    # doc = textacy.make_spacy_doc(passage, lang=en)
+
+
+    doc = nlp(passage)
     graphs = doc._.to_amr()
 
     meta = extract_meta(passage, "default", "passage_to_logic()")
