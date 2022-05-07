@@ -6,7 +6,9 @@ from nltk.corpus import propbank
 # nltk.download("propbank")
 # nltk.download("treebank")
 
-rs = propbank.roleset('color.01')
+# color-01
+
+rs = propbank.roleset('abstain.01')
 
 for role in rs.findall('roles/role'):
     print(role.attrib['n'], role.attrib['descr'])

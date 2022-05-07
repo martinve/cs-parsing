@@ -8,52 +8,54 @@ import penman
 import textacy
 import spacy
 import benepar
-from predpatt import PredPatt
+import time
 
 from logger import logger
 
 import stanza
 import spacy_stanza
-# stanza.download("en")
-
 
 warnings.filterwarnings('ignore')
-
-# spacy.cli.download("en_core_web_sm")
-# benepar.download('benepar_cen3', quiet=True)
-
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
 dirname = os.path.dirname(__file__)
 model_stog_dir = os.path.join(dirname, "models/model_stog")
 
-stog = amrlib.load_stog_model(model_dir=model_stog_dir)
-amrlib.setup_spacy_extension()
+stanza_nlp = None
+nlp = None
 
-# Constituency parsing
-en = spacy_stanza.load_pipeline("en", processors='tokenize,ner,pos,lemma,depparse')
+debug = True
 
-# en = textacy.load_spacy_lang("en_core_web_sm")
-en.add_pipe('benepar', config={'model': 'benepar_en3'})
 
-nlp = nlp = stanza.Pipeline(lang='en', processors='tokenize,ner,pos,lemma,depparse')
+def init_pipeline():
+    global stanza_nlp, nlp
 
-role_dict = {
-    "ARG0": "agent",
-    "ARG1": "patient",
-    "ARG2": "instrument",
-    "ARG3": "startingPoint",
-    "ARG4": "endingPoint",
-    "ARGN": "modifier"
-}
+    stog = amrlib.load_stog_model(model_dir=model_stog_dir)
+    amrlib.setup_spacy_extension()
+
+    nlp = spacy_stanza.load_pipeline("en", processors='tokenize,ner,pos,lemma,constituency,depparse')
+    nlp.add_pipe('benepar', config={'model': 'benepar_en3'})
+    stanza_nlp = stanza.Pipeline(lang='en', processors='tokenize,ner,pos,lemma,constituency,depparse')
+
+
+def debug_print(*args, **kwargs):
+    if not debug:
+        return
+    print(*args, **kwargs)
+
 
 def udparse(text):
-    doc = nlp(text)
+    start = time.time()
+    doc = stanza_nlp(text)
     docpy = doc.to_dict()
+    debug_print("[Parse 1] UD in:", time.time() - start)
     return docpy
 
+
 def get_word_types(sent):
-    print("SENT TYPE:", type(sent))
+    """
+    :type sent: spacy.tokens.span.Span
+    """
 
     wordtypes = {}
     for token in sent:
@@ -66,6 +68,9 @@ def get_word_types(sent):
 
 
 def get_named_entities(sent):
+    """
+    :type sent: spacy.tokens.span.Span
+    """
     ner = {}
     for ent in sent.ents:
         if ent.label_ not in ner.keys():
@@ -75,8 +80,10 @@ def get_named_entities(sent):
 
 
 def get_wordnet_hierarchy(sent):
+    start = time.time()
+
     wordnet = []
-    cmd = "python3 ./wordnet_tree/wordnet_tree.py -s"
+    cmd = "python3 wordnet_tree.py -s"
 
     wordnet_types = {
         "VERB": "v",
@@ -87,7 +94,7 @@ def get_wordnet_hierarchy(sent):
         if token.pos_ not in wordnet_types.keys():
             continue
         syn = ".".join([token.lemma_, wordnet_types[token.pos_], "01"])
-        # print(token, syn, sep=" -> ")
+        # debug_print(token, syn, sep=" -> ")
 
         outp = subprocess.run(cmd + " " + syn, stdout=subprocess.PIPE, shell=True)
         res = str(outp.stdout, 'utf-8')
@@ -97,46 +104,28 @@ def get_wordnet_hierarchy(sent):
         word = {"word": token.text, "syn": syn, "parents": parents}
 
         wordnet.append(word)
+
+    if debug:
+        debug_print("[Onto] Wordnet:", time.time() - start)
+
     return wordnet
 
 
 def get_noun_phrases(sent):
+    """
+    :type sent: spacy.tokens.span.Span
+    """
     chunks = []
     for np in sent.noun_chunks:
         chunks.append(np.text)
     return chunks
 
 
-def analyze_sentence(sent, out):
-    if len(sent.text.strip()) < 1:
-        return False
-
-    parsed: dict[str, object] = {"sentence": sent.text}
-
-    wordtypes = get_word_types(sent)
-    parsed["wordtypes"] = wordtypes
-
-    ner = get_named_entities(sent)
-    parsed["ner"] = ner
-
-    wordnet = get_wordnet_hierarchy(sent)
-    parsed["wordnet"] = wordnet
-
-    parsed["syntaxparse"] = {
-        "verbphrase": get_verb_phrases(sent),
-        "nounphrase": get_noun_phrases(sent)
-    }
-    parsed["semparse"] = {}
-    parsed["triples"] = get_svo_triples(sent)
-
-    constituency = get_constituency(sent)
-    parsed["constituency"] = str(constituency)
-
-    return parsed
-
-
 def get_constituency(sent):
-    return sent._.parse_string
+    start = time.time()
+    constituency = sent._.parse_string
+    debug_print("[Parse 2] Constituency in:", time.time() - start)
+    return constituency
 
 
 def get_verb_phrases(sent):
@@ -155,7 +144,6 @@ def get_verb_phrases(sent):
 
 def get_svo_triples(sent):
     triples = textacy.extract.triples.subject_verb_object_triples(sent)
-
     svo = []
     for t in triples:
         item = {
@@ -167,88 +155,9 @@ def get_svo_triples(sent):
     return svo
 
 
-def analyze_passage(passage, context="default"):
-    doc = textacy.make_spacy_doc(passage, lang=en)
-
-    logger.info(f"Type (doc): {type(doc)}")
-
-    out = {"passage": passage, "context": context, "sentences": []}
-
-    k = 0
-    for sent in doc.sents:
-
-        logger.info(f"Type (sent): {type(doc)}")
-
-        parsed = analyze_sentence(sent, out)
-
-        if not parsed:
-            continue
-
-        out["sentences"].append(parsed)
-        k = k + 1
-
-    return out
-
-
-def cleanup_tree(ptree, remove_first_line=True):
-    if remove_first_line:
-        ptree = '\n'.join(ptree.split('\n')[1:])
-
-    ptree = ptree.replace("\n", " ")
-    ptree = re.sub(' {2,}', ' ', ptree)
-    return ptree
-
-
-def extract_sentence_meta(sent: object, out):
-    if len(sent.text.strip()) < 1:
-        return False
-
-    parsed: dict[str, object] = {
-        "sentence": sent.text,
-        "wordtypes": get_word_types(sent),
-        "ner": get_named_entities(sent),
-        "wordnet": get_wordnet_hierarchy(sent),
-        "syntaxparse": {
-            "verbphrase": get_verb_phrases(sent),
-            "nounphrase": get_noun_phrases(sent)
-        },
-        "semparse": {
-            "amr": cleanup_tree(sent._.to_amr()[0]),
-            "ud": udparse(sent.text)
-        },
-        "triples": get_svo_triples(sent),
-        "constituency": str(get_constituency(sent)),
-        "logic": {
-            "fol": {},  # str(text2logic(sent.text, False)),
-            "json": str(generate_clauses(cleanup_tree(sent._.to_amr()[0])))
-        }
-    }
-
-    return parsed
-
-
-def extract_meta(passage: str, context="default", message=False):
-    doc = textacy.make_spacy_doc(passage, lang=en)
-    # print("extract_meta():", message)
-
-    meta = {"passage": passage, "context": context, "sentences": []}
-
-    k = 0
-    for sent in doc.sents:
-        parsed = extract_sentence_meta(sent, meta)
-
-        if not parsed:
-            continue
-
-        meta["sentences"].append(parsed)
-        k = k + 1
-
-    return meta
-
-
 def format_clause(txt):
     """
-    Remove AMR specific clause modifiers, e.g :ARG0 is transformed to ARG1
+    Remove AMR specific clause modifiers, e.g :ARG0 is transformed to ARG0
     """
     return txt.replace(":", "")
 
@@ -268,89 +177,86 @@ def format_variable(txt):
     return txt.upper()
 
 
-def generate_clauses(amr_string):
+def get_sentence_analysis(sent: object):
     """
-    Generate clauses from AMR string
+    :type sent: spacy.tokens.span.Span
     """
-    g = penman.decode(amr_string)
+    if len(sent.text.strip()) < 1:
+        return False
 
-    constant_dict = {}
-    for c in g.attributes():
-        constant_dict[c[0]] = c[1]
+    debug_print("SENT", type(sent))
 
-    clauses = []
+    sent_ud = udparse(sent.text)
 
-    # Get base concepts
-    for inst in g.instances():
-        value = format_variable(inst[0])
+    constituency = str(get_constituency(sent))
 
-        # We do not create clauses for constants
-        if inst[0] in constant_dict:
+    # start = time.time()
+    # svo_triples = get_svo_triples(sent)
+    # debug_print("[Parse 3] triples in:", time.time() - start)
+
+    parsed: dict[str, object] = {
+        "sentence": sent.text,
+        "wordtypes": get_word_types(sent),
+        "ner": get_named_entities(sent),
+        # "wordnet": get_wordnet_hierarchy(sent),
+        "syntaxparse": {
+            "verbphrase": get_verb_phrases(sent),
+            "nounphrase": get_noun_phrases(sent)
+        },
+        "semparse": {
+            "amr": get_amr_parse(sent),
+            "ud": sent_ud
+        },
+        # "triples": svo_triples,
+        "constituency": constituency,
+        # "logic": str(generate_clauses(cleanup_tree(sent._.to_amr()[0])))
+    }
+
+    return parsed
+
+
+def get_amr_parse(sent):
+    start = time.time()
+    parse = sent._.to_amr()[0]
+    if debug:
+        debug_print("[Parse 0] AMR in:", time.time() - start)
+    return parse
+
+
+def get_passage_analysis(passage: str, context="default"):
+    st0 = time.time()
+    doc = textacy.make_spacy_doc(passage, lang=nlp)
+    debug_print("textacy.make_spacy_doc in:", time.time() - st0)
+
+    # debug_print("DOC", type(doc))
+
+    meta = {"passage": passage, "context": context, "sentences": [], "spacy": doc.to_json()}
+
+    k = 0
+    for sent in doc.sents:
+        start = time.time()
+        parsed = get_sentence_analysis(sent)
+        end = time.time()
+        debug_print(k, "get_sentence_analysis:", time.time() - start)
+
+        if not parsed:
             continue
 
-        arity = max(
-            len(g.edges(source=inst[0])),
-            len(g.edges(target=inst[0]))
-        )
+        meta["sentences"].append(parsed)
+        k = k + 1
 
-        expr = [inst[2], value]
-        if arity > 1:
-            for edge in g.edges(source=inst[0]):
-                val = format_variable(edge[2])
-                if edge[2] in constant_dict:
-                    val = format_constant(edge[2])
-                expr.append(val)
-        clauses.append(expr)
-
-    # Get concept relations
-    for rel in g.edges():
-        value = format_variable(rel[2])
-        constants = g.attributes(source=rel[2])
-        if len(constants) > 0:
-            value = format_constant(constants[0][2])
-
-        predicate = format_clause(rel[1])
-
-        if predicate in role_dict.keys():
-            predicate = role_dict[predicate]
-
-        clause = [
-            predicate,
-            format_variable(rel[0]),
-            value]
-        clauses.append(clause)
-
-    # return json.dumps(intersperse(clauses, "&"))
-    return json.dumps(clauses)
-
-
-def passage2logic(passage, debug=False):
-    # doc = textacy.make_spacy_doc(passage, lang=en)
-
-
-    doc = nlp(passage)
-    graphs = doc._.to_amr()
-
-    meta = extract_meta(passage, "default", "passage_to_logic()")
-
-    i = 0
-    for sent in list(doc.sents):
-        logic = generate_clauses(graphs[i])
-        if debug:
-            print("SENT:", sent)
-            print("META", meta["sentences"][i])
-            print("AMR:", cleanup_tree(graphs[i]))
-            print("LOGIC:", logic)
-            print("---")
-        i = i + 1
+    return meta
 
 
 if __name__ == "__main__":
 
     if len(sys.argv) == 1:
-        print("No input passage provided")
+        debug_print("No input passage provided")
         sys.exit()
 
-    passage = sys.argv[1]
-    passage_meta = extract_meta(passage, "default", "__main__")
-    print(json.dumps(passage_meta, indent=2))
+    passage_in = sys.argv[1]
+
+    init_pipeline()
+
+    passage_meta = get_passage_analysis(passage_in, "default")
+    debug_print(json.dumps(passage_meta, indent=2))
