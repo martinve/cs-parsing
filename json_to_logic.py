@@ -1,13 +1,15 @@
 import json
 import pprint
 import sys
+import re
 
+import config
 from amr_to_json import amr_to_json
+import debugger
 from logger import logger
 from types_util import is_string, is_op, is_list, is_atom
 
 logic_lst = []
-debug = True
 
 role_dict = {
     ":arg0": "agent",
@@ -16,6 +18,9 @@ role_dict = {
     ":arg3": "startingPoint",
     ":arg4": "endingPoint",
     ":arg5": "modifier",
+}
+
+amr_dict = {
     ":domain": "isa"
 }
 
@@ -34,12 +39,24 @@ def intersperse(lst, item):
 
 
 def is_variable_assignment(cl):
-    return len(cl) == 2 and is_string(cl[0]) and is_string(cl[1])
+    is_assignment = len(cl) == 2 and \
+                    is_string(cl[0]) and \
+                    is_string(cl[1]) and \
+                    cl[0] != ":polarity"
+
+    if not is_assignment:
+        debugger.debug_print(f"Is_variable_assignment={is_assignment} {cl}")
+
+    return is_assignment
+
+
+def is_negative(cl):
+    return len(cl) == 2 and cl[0] == ":polarity"
 
 
 def add_clause(stmt, debug_msg):
     logic_lst.append(stmt)
-    if debug and debug_msg:
+    if config.debug_graph_construction and debug_msg:
         logger.info(f"ADD ({debug_msg}): {stmt}")
 
 
@@ -83,22 +100,10 @@ def extract_name(cl):
     return "_".join(names)
 
 
-def replace_role(arg):
-    return arg
-
-    # TODO: uncomment, check exception
-
-    rel = arg.lower()
-    return rel
-
-    if rel in role_dict.keys():
-        rel = role_dict[arg]
-    return argcl
-
 
 def parse_edge(edge, parent, debug=False):
     if debug:
-        logger.debug(f"IN_0 ({parent}): {edge}")
+        logger.debug(f"IN_0 parent={parent} edge={edge}")
 
     value = edge[0:2]
     modifier = edge[2:]
@@ -118,6 +123,8 @@ def parse_edge(edge, parent, debug=False):
         else:
             raise ValueError("Edge must be list", edge, parent)
 
+    # TODO: Polarity checking
+
     # Operator merging
     all_ops = True
     for idx, it in enumerate(edge):
@@ -127,7 +134,6 @@ def parse_edge(edge, parent, debug=False):
         ops = []
         for it in edge:
             ops.append(it[1])
-
         stmt = [parent, ops]
         add_clause(stmt, "ops")
         return
@@ -136,21 +142,23 @@ def parse_edge(edge, parent, debug=False):
 
     # Name handling
     if ':name' == value[0] and 'name' == value[1][1]:
-
         # stmt = [val[1][1], val[1][0], parent]
         # add_clause(stmt, "name_val")
-
         name = extract_name(modifier)
         stmt = ["name", name, parent]
         add_clause(stmt, "extract_name")
-
         if debug:
             logger.warning(f"Name: {value}, mod={modifier}")
             logger.warning("Return after name val parsing.")
         return
+    elif ':polarity' == value[0]:
+        # TODO: Handle polarity
+        # - Assign polarity to next clause
+        if debug:
+            logger.warning(f"Polarity edge={edge}, parent={parent}")
+            pass
     else:
-        rel = replace_role(value[0])
-        stmt = [rel, value[1][1], value[1][0]]
+        stmt = [value[0], value[1][1], value[1][0]]
         add_clause(stmt, "edge_val")
 
     parent = edge[1][0]
@@ -168,15 +176,22 @@ def parse_edge(edge, parent, debug=False):
                     logger.warning(f"Mofifier: {modifier}, edge={value}, parent={parent}")
 
 
-def json_list_to_logic(json_list, debug):
+def json_list_to_logic(json_list, debug=False):
     parent_var = None
     for cl in json_list:
+        if debug:
+            print(f"Check edge: {cl}")
         if is_variable_assignment(cl):
+            if debug:
+                print(f"VA: {cl}")
             if not parent_var:
-                stmt = ["instance", cl[1], cl[0]]
+                clause_type = "instance"
+                stmt = [clause_type, cl[1], cl[0]]
                 add_clause(stmt, "assign_var")
                 parent_var = stmt
         else:
+            if debug:
+                print(f"PE: {cl}")
             parse_edge(cl, parent_var, debug)
 
 
@@ -194,6 +209,7 @@ def svo_filter(clause_lst, s=None, v=None, o=None):
 
 def simplify_clauses(clause_lst):
     logger.info("Simplifying clauses.")
+    logger.info(clause_lst)
     return clause_lst
 
     simpl_lst = []
@@ -212,16 +228,24 @@ def simplify_clauses(clause_lst):
     return simpl_lst
 
 
-def amr_to_logic(amr_str, constituency, debug=False):
+def question_to_logic(amr_str, constituency, udparse, debug=False):
+    data = {
+        "amr": amr_str,
+        "const": constituency,
+        "ud": udparse
+    }
+    pprint.pprint(data, indent=2)
+    return logic_from_amr(amr_str, constituency, debug=False)
+
+
+def logic_from_amr(json_list, debug=False):
     global logic_lst
     logic_lst = []
-
-    json_list = amr_to_json(amr_str, debug=debug)
 
     if debug:
         pprint.pprint(json_list, indent=2)
 
-    json_list_to_logic(json_list, debug)
+    json_list_to_logic(json_list, config.debug_graph_construction)
 
     json_logic = logic_lst
 
@@ -231,9 +255,9 @@ def amr_to_logic(amr_str, constituency, debug=False):
     outp = json.loads(outp)
 
     if debug:
-        print("--- LOGIC (", len(json_logic), ")---")
-        pprint.pprint(json_logic)
-        print("--- CLAUSES ---")
+        # print("--- LOGIC (", len(json_logic), ")---")
+        # pprint.pprint(json_logic)
+        print(f"--- CLAUSES --- ({len(outp)})")
         pprint.pprint(outp, indent=2)
 
     # outp = json.loads(outp)
