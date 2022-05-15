@@ -3,42 +3,36 @@ import pprint
 import sys
 import re
 
+import amrutil
 import config
-from amr_to_json import amr_to_json
 import debugger
 from logger import logger
 from types_util import is_string, is_op, is_list, is_atom
 
 logic_lst = []
 
-role_dict = {
-    ":arg0": "agent",
-    ":arg1": "patient",
-    ":arg2": "instrument",
-    ":arg3": "startingPoint",
-    ":arg4": "endingPoint",
-    ":arg5": "modifier",
-}
-
-amr_dict = {
-    ":domain": "isa"
-}
-
-
+"""
 def list_depth(lst):
     if isinstance(lst, list):
         return 1 + max(list_depth(item) for item in lst) if lst else 0
     else:
         return 0
+"""
 
-
+"""
 def intersperse(lst, item):
     result = [item] * (len(lst) * 2 - 1)
     result[0::2] = lst
     return result
+"""
 
 
 def is_variable_assignment(cl):
+    """
+    Check the form [instance, var]
+    :param cl:
+    :return:
+    """
     is_assignment = len(cl) == 2 and \
                     is_string(cl[0]) and \
                     is_string(cl[1]) and \
@@ -51,7 +45,11 @@ def is_variable_assignment(cl):
 
 
 def is_negative(cl):
-    return len(cl) == 2 and cl[0] == ":polarity"
+    return len(cl) == 2 and cl[0] == ":polarity" and cl[1] == "-"
+
+
+def is_polarity_modifier(cl):
+    return is_negative(cl)
 
 
 def add_clause(stmt, debug_msg):
@@ -60,6 +58,7 @@ def add_clause(stmt, debug_msg):
         logger.info(f"ADD ({debug_msg}): {stmt}")
 
 
+"""
 def add_question(json_logic, question):
     if question:
         try:
@@ -70,6 +69,7 @@ def add_question(json_logic, question):
             logger.error(question)
             sys.exit(-1)
     return json_logic
+"""
 
 
 def add_question_clauses(json_logic, question):
@@ -90,18 +90,9 @@ def add_question_clauses(json_logic, question):
     return json_logic
 
 
-def extract_name(cl):
-    names = []
-    for e in cl:
-        if not is_list(e):
-            continue
-        if e[0][0:3] == ":op":
-            names.append(e[1].lower())
-    return "_".join(names)
-
-
-
 def parse_edge(edge, parent, debug=False):
+    amrutil.check_edge(edge, parent)
+
     if debug:
         logger.debug(f"IN_0 parent={parent} edge={edge}")
 
@@ -123,7 +114,8 @@ def parse_edge(edge, parent, debug=False):
         else:
             raise ValueError("Edge must be list", edge, parent)
 
-    # TODO: Polarity checking
+    if is_polarity_modifier(edge):
+        print(f"Polarity: edge={edge} parent={parent}")
 
     # Operator merging
     all_ops = True
@@ -142,11 +134,10 @@ def parse_edge(edge, parent, debug=False):
 
     # Name handling
     if ':name' == value[0] and 'name' == value[1][1]:
-        # stmt = [val[1][1], val[1][0], parent]
-        # add_clause(stmt, "name_val")
-        name = extract_name(modifier)
-        stmt = ["name", name, parent]
+
+        stmt = amrutil.extract_name_variable(edge)
         add_clause(stmt, "extract_name")
+
         if debug:
             logger.warning(f"Name: {value}, mod={modifier}")
             logger.warning("Return after name val parsing.")
@@ -158,8 +149,9 @@ def parse_edge(edge, parent, debug=False):
             logger.warning(f"Polarity edge={edge}, parent={parent}")
             pass
     else:
-        stmt = [value[0], value[1][1], value[1][0]]
-        add_clause(stmt, "edge_val")
+        if not isinstance(value, str):
+            stmt = [value[0], value[1][1], value[1][0]]
+            add_clause(stmt, "edge_val")
 
     parent = edge[1][0]
 
@@ -185,7 +177,7 @@ def json_list_to_logic(json_list, debug=False):
             if debug:
                 print(f"VA: {cl}")
             if not parent_var:
-                clause_type = "instance"
+                clause_type = "rootvar"
                 stmt = [clause_type, cl[1], cl[0]]
                 add_clause(stmt, "assign_var")
                 parent_var = stmt
@@ -195,6 +187,7 @@ def json_list_to_logic(json_list, debug=False):
             parse_edge(cl, parent_var, debug)
 
 
+"""
 def svo_filter(clause_lst, s=None, v=None, o=None):
     ret = []
     for cl in clause_lst:
@@ -205,8 +198,9 @@ def svo_filter(clause_lst, s=None, v=None, o=None):
         if o and cl[2] == o:
             ret.append(cl)
     return ret
+"""
 
-
+"""
 def simplify_clauses(clause_lst):
     logger.info("Simplifying clauses.")
     logger.info(clause_lst)
@@ -226,9 +220,11 @@ def simplify_clauses(clause_lst):
             logger.info(f"Find: {find}, search={cl[2]}, res={find}")
 
     return simpl_lst
+"""
 
 
-def question_to_logic(amr_str, constituency, udparse, debug=False):
+
+def question_from_amr(amr_str, constituency, udparse, debug=False):
     data = {
         "amr": amr_str,
         "const": constituency,
@@ -238,7 +234,13 @@ def question_to_logic(amr_str, constituency, udparse, debug=False):
     return logic_from_amr(amr_str, constituency, debug=False)
 
 
-def logic_from_amr(json_list, debug=False):
+def from_amr(json_list, debug=False):
+    """
+    Create FOL clauses from AMR -> JSON conversion
+    :param json_list:
+    :param debug:
+    :return:
+    """
     global logic_lst
     logic_lst = []
 

@@ -1,5 +1,6 @@
 import json
 import re
+import sys
 from pprint import pprint
 
 ud = "(S (NP (NNP Tallinn)) (VP (VBZ is) (NP (NP (DT a) (NN capital)) (PP (IN of) (NP (NNP Estonia))))) (. .))"
@@ -37,13 +38,17 @@ def get_list_el(lst, tag):
 
 def get_list_word(lst, word):
     match = None
+
+    # from pprint import pprint
+    # pprint(lst)
+    # print(word)
+    # sys.exit(-1)
+
     for idx, el in enumerate(lst):
-        if type(el) == list and not match:
-            if el[1] == word:
-                match = el
-            else:
-                if get_list_word(el, word):
-                    match = get_list_word(el, word)
+       if el["lemma"] == word:
+           match = el
+
+    print(match)
     return match
 
 

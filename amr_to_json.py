@@ -1,17 +1,41 @@
 import json
 import re
+import sys
+
 from logger import logger
 
 failed = []
 
+def cleanup_tree(ptree, remove_first_line=True):
+    """
+    Cleanup AMR graph by removing parser output metadata and compressing the output
 
-def add_quotes(s):
+    :param ptree:
+    :param remove_first_line:
+    :return:
+    """
+    if remove_first_line:
+        ptree = '\n'.join(ptree.split('\n')[1:])
+
+    ptree = ptree.replace("\n", " ")
+    ptree = re.sub(' {2,}', ' ', ptree)
+    return ptree
+
+
+def quote_json_strings(s):
+    """
+    Wrap JSON strings in quotes
+    :param s:
+    :return:
+    """
     ret = re.sub(r'(:?[a-zA-Z0-9-]+)', r'"\1"', s)
-    # TODO: Cleaner solution
     return ret.replace('""', '"')
 
 
 def amr_to_json(amr_str, debug=False):
+
+    if amr_str[0] == "#": amr_str = cleanup_tree(amr_str)
+
     depth = 0
     ret = []
     read_op = False
@@ -62,7 +86,7 @@ def amr_to_json(amr_str, debug=False):
         ret.append(char)
 
     ret = "".join(ret)
-    ret = add_quotes(ret)
+    ret = quote_json_strings(ret)
     ret = f"[{ret}]"
 
     return_arr = []
@@ -73,7 +97,7 @@ def amr_to_json(amr_str, debug=False):
         failed.append(ret)
 
     if debug:
-        logger.info(f"str: {ret}")
-        logger.info(f"lst: {return_arr}")
+        logger.debug("AMR -> JSON:")
+        logger.debug(return_arr)
 
     return return_arr

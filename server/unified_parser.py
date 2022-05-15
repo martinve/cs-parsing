@@ -10,10 +10,18 @@ import spacy
 import benepar
 import time
 
+
 from logger import logger
 
 import stanza
 import spacy_stanza
+
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
+
+from debugger import debug_print
+
 
 warnings.filterwarnings('ignore')
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
@@ -24,11 +32,13 @@ model_stog_dir = os.path.join(dirname, "models/model_stog")
 stanza_nlp = None
 nlp = None
 
-debug = True
+debug = False
 
 
 def init_pipeline():
     global stanza_nlp, nlp
+
+    debug_print("Initializing model pipeline.")
 
     stog = amrlib.load_stog_model(model_dir=model_stog_dir)
     amrlib.setup_spacy_extension()
@@ -37,11 +47,6 @@ def init_pipeline():
     nlp.add_pipe('benepar', config={'model': 'benepar_en3'})
     stanza_nlp = stanza.Pipeline(lang='en', processors='tokenize,ner,pos,lemma,constituency,depparse')
 
-
-def debug_print(*args, **kwargs):
-    if not debug:
-        return
-    print(*args, **kwargs)
 
 
 def udparse(text):
@@ -184,7 +189,7 @@ def get_sentence_analysis(sent: object):
     if len(sent.text.strip()) < 1:
         return False
 
-    debug_print("SENT", type(sent))
+    # debug_print("Sent typr", type(sent))
 
     sent_ud = udparse(sent.text)
 

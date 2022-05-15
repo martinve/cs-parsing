@@ -1,0 +1,57 @@
+== from: server/unified_parser.py
+
+
+def generate_clauses(amr_string):
+    """
+    Generate clauses from AMR string
+    """
+    g = penman.decode(amr_string)
+
+    constant_dict = {}
+    for c in g.attributes():
+        constant_dict[c[0]] = c[1]
+
+    clauses = []
+
+    # Get base concepts
+    for inst in g.instances():
+        value = format_variable(inst[0])
+
+        # We do not create clauses for constants
+        if inst[0] in constant_dict:
+            continue
+
+        arity = max(
+            len(g.edges(source=inst[0])),
+            len(g.edges(target=inst[0]))
+        )
+
+        expr = [inst[2], value]
+        if arity > 1:
+            for edge in g.edges(source=inst[0]):
+                val = format_variable(edge[2])
+                if edge[2] in constant_dict:
+                    val = format_constant(edge[2])
+                expr.append(val)
+        clauses.append(expr)
+
+    # Get concept relations
+    for rel in g.edges():
+        value = format_variable(rel[2])
+        constants = g.attributes(source=rel[2])
+        if len(constants) > 0:
+            value = format_constant(constants[0][2])
+
+        predicate = format_clause(rel[1])
+
+        if predicate in role_dict.keys():
+            predicate = role_dict[predicate]
+
+        clause = [
+            predicate,
+            format_variable(rel[0]),
+            value]
+        clauses.append(clause)
+
+    # return json.dumps(intersperse(clauses, "&"))
+    return json.dumps(clauses)

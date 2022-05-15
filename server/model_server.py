@@ -1,11 +1,16 @@
 from flask import Flask
 from flask import request
-
+from waitress import serve
+import os, sys
 from unified_parser import get_passage_analysis, init_pipeline
 
-app = Flask(__name__)
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
 
-PORT = 5000
+import config
+
+app = Flask(__name__)
 
 
 @app.route("/")
@@ -19,7 +24,5 @@ def parse():
 
 
 if __name__ == "__main__":
-    from waitress import serve
     init_pipeline()
-    serve(app, host="0.0.0.0", port=PORT)
-
+    serve(app, host="0.0.0.0", port=config.server_port)

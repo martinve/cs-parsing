@@ -3,7 +3,7 @@ import subprocess
 import pprint
 
 solver_fname = "./solver/gk"
-solver_in_fname = "infile.js"
+solver_in_fname = "./solver/gk_in.js"
 
 
 def run_solver(question, print_logic=False):
@@ -13,7 +13,7 @@ def run_solver(question, print_logic=False):
     pp = pprint.pformat(question, indent=2, compact=False)
     instr = pp.replace("'", "\"")
     if print_logic:
-        print("\nprover input:\n", instr)
+        print("\nProver input:\n", instr)
 
     infile = open(solver_in_fname, "w")
     infile.write(instr)
@@ -21,9 +21,6 @@ def run_solver(question, print_logic=False):
 
     path = solver_fname
     params = solver_in_fname
-
-    # decodedd=data.decode('ascii')
-    # print("capi called with data",decodedd)
 
     calc = subprocess.Popen([path, params, "-mbsize", "100"], stdout=subprocess.PIPE).communicate()[0]
     sres = calc.decode('ascii')

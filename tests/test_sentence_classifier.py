@@ -1,12 +1,14 @@
 import csv
 import json
 import re
+import sys
 
 from sklearn import metrics
 
 from amr_to_json import amr_to_json
 from logger import logger
-from logicconvert import extract_meta
+from logicconvert import fetch_parse_from_server
+from tests.sentence_heuristic_classifier import predict_snt_type
 from tests.test_ud_parse import get_list_word
 from types_util import is_verb
 
@@ -28,7 +30,7 @@ snt_types = {
 }
 
 
-def ud_to_json(parse):
+def constituency_to_json(parse):
     p = parse.replace("(", "[")
     p = p.replace(")", "]")
     p = p.replace(") (", "],[")
@@ -58,7 +60,7 @@ def get_list_el(lst, tag):
     return None
 
 
-def predict_snt_type(amr_lst, ud_lst):
+def predict_snt_type_(amr_lst, ud_lst):
     amr_root = amr_lst[0][1]
 
     if is_verb(amr_root):
@@ -66,10 +68,18 @@ def predict_snt_type(amr_lst, ud_lst):
 
     ud_root = get_list_word(ud_lst, amr_root)
 
-    logger.debug(f"Roots: amr={amr_root}, ud={ud_root}")
+    snt_type = 0
 
     if not ud_root:
         logger.warning(f"Cannot get UD root for {amr_root}")
+        logger.warning(ud_lst)
+    else:
+        if ud_root["upos"] == "NOUN":
+            snt_type = 1
+        elif ud_root["upos"] == "VERB":
+            snt_type = 3
+
+    logger.warning(f"Roots: amr={amr_root}, ud={ud_root}")
 
     # pprint(amr_lst, indent=2)
     # print("D0", get_list_el(ud_lst, "VP"))
@@ -78,35 +88,41 @@ def predict_snt_type(amr_lst, ud_lst):
 
     # pprint(ud_lst, indent=2)
 
-    return 0
+    return snt_type
 
 
-if __name__ == "__main__":
+def parse_sentences():
+    parse = []
+    y_true = []
+    y_pred = []
 
     with open("sentence_classifier_data.csv") as f:
         reader = csv.reader(f)
         next(reader)
 
-        y_true = y_pred = []
-
         for row in reader:
-            label = row[0]
+
+            if not row: continue
+
+            print("row", row)
+            label = int(row[0])
             sent = row[1]
 
-            meta = extract_meta(sent)["sentences"][0]
+            meta = fetch_parse_from_server(sent)["sentences"][0]
 
             amr = meta["semparse"]["amr"]
-            ud = meta["constituency"]
+            const = meta["constituency"]
+            ud = meta["semparse"]["ud"][0]
 
-            logger.debug(f"UD:{ud}\nAMR:{amr}")
+            # logger.debug(f"UD:{ud}\nAMR:{amr}")
             # logger.info(meta)
 
             amr_lst = amr_to_json(amr)
-            ud_lst = ud_to_json(ud)
+            ud_lst = ud
 
             # pprint(ud_lst, indent=2)
 
-            predicted_label = predict_snt_type(amr_lst, ud_lst)
+            predicted_label = predict_snt_type(ud_lst)
 
             y_true.append(label)
             y_pred.append(predicted_label)
@@ -116,6 +132,60 @@ if __name__ == "__main__":
             # assert predicted_label == label
 
             # sys.exit(-1)
+            parse.append({
+                "y_true": label,
+                "snt": sent,
+                "amr": amr,
+                "ud": ud,
+                "constituency": const
+            })
 
-        # print(metrics.confusion_matrix(y_true, y_pred))
-        print(metrics.classification_report(y_true, y_pred))
+        with open('parse.json', 'w') as f:
+            json.dump(parse, f, indent=2)
+            logger.info("Saved passage meta.")
+
+        return y_pred, y_true
+
+
+def get_ud_root(snt):
+    for tok in snt:
+        if tok["deprel"] == "root":
+            return tok
+
+
+if __name__ == "__main__":
+
+    y_pred, y_true = parse_sentences()
+    print(y_pred, y_true)
+
+    print(metrics.confusion_matrix(y_true, y_pred))
+    print(metrics.classification_report(y_true, y_pred))
+
+    sys.exit(-1)
+
+    y_true = []
+    y_pred = []
+
+    with open("parse.json") as infile:
+        data = json.load(infile)
+
+        for snt in data:
+            amr_lst = amr_to_json(snt["amr"])
+            ud_lst = snt["ud"]
+            constituency = snt["constituency"]
+            uroot = get_ud_root(ud_lst)
+
+            print(f"S:{snt['snt']} label={snt['label']}")
+            print("A:", amr_lst)
+            print("C:", constituency)
+            debug_print_sentence_tree(snt["ud"])
+            # print("U:", ud_lst)
+            print("UROOT:", uroot)
+            print("---")
+
+            predicted_label = predict_snt_type(amr_lst, ud_lst)
+
+            y_true.append(snt["label"])
+            y_pred.append(predicted_label)
+
+

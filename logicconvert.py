@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Convert a text passage to logic
 
@@ -6,113 +8,149 @@ import json
 import os
 import sys
 import pprint
+import argparse
 
-from json_to_logic import amr_to_logic, add_question, add_question_clauses
+import amrutil
+import api
+import config
+
+import config
+from RoleReplacer import RoleReplacer
+from amr_to_json import amr_to_json
+import json_to_logic as json2logic
 from logger import logger
 from solver import run_solver
-from types_util import is_list
+from tests.sentence_heuristic_classifier import predict_snt_type, snt_type_label
+import udutil
+import simplifier
 
-debug = True
 
 load_fresh = False
 save_meta = False
 load_meta = True
 
 
-def toggle_reload():
-    global save_meta, load_meta
-    if load_fresh:
-        save_meta = True
-        load_meta = False
-    else:
-        save_meta = False
-        load_meta = True
+def is_question(snt):
+    return snt.endswith("?")
 
 
-def extract_meta(passage):
-    import requests
-
-    uri = "http://localhost:5000"
-    json_data = None
-
-    try:
-        req = requests.get(f"{uri}/?passage={passage}")
-        json_data = req.json()
-    except:
-        print("Cannot connect to parse server at: ", uri)
-        print("Exiting.")
-        sys.exit(-1)
-
-    return json_data
-
-
-def is_question(passage):
-    return passage.endswith("?")
-
-
-if __name__ == "__main__":
-
-    # os.system("clear")
-
-    if len(sys.argv) < 2:
-        print("No input provided")
-        sys.exit()
-
-    passage = sys.argv[1]
-
-    if "--refresh" in sys.argv:
-        load_fresh = True
-
-    if "--clear" in sys.argv:
-        os.system("clear")
-
-    toggle_reload()
-
-    question = False
-    if len(sys.argv) == 3:
-        question_str = sys.argv[2]
-
-    if load_meta:
-        with open('data/passage_meta.json') as f:
-            passage_meta = json.load(f)
-    else:
-        passage_meta = extract_meta(passage)
-
-    if save_meta:
-        with open('data/passage_meta.json', 'w') as f:
-            json.dump(passage_meta, f, indent=2)
-            logger.info("Saved passage meta.")
-
+def main(passage_raw, limit=False):
     logic = []
     question = None
 
-    for sent in passage_meta['sentences']:
+    debug = config.debug_clauses
+
+    if limit:
+        passage_raw["sentences"] = passage_raw["sentences"][:limit]
+        print("Limit:", limit)
+
+    context = []
+
+    role_replacer = RoleReplacer()
+
+    for idx, sent in enumerate(passage_raw['sentences']):
         amr = sent["semparse"]["amr"]
+        ud = sent["semparse"]["ud"]
         const = sent["constituency"]
 
-        clauses = amr_to_logic(amr, const)
+        config.snt_ud = ud[0]
 
-        if debug:
-            c = pprint.pformat(clauses, indent=2, compact=False)
-            logger.debug(f"Snt: {sent['sentence']}, ques={is_question(sent['sentence'])}")
-            logger.debug(f"Const: {sent['constituency']}")
-            logger.debug(f"AMR: {amr}")
-            logger.debug(f"Clauses: ({len(clauses)}) \n{c}")
+        # UD parse fix
+        if isinstance(ud, list) and len(ud) == 1: ud = ud[0]
+
+        json_list = amr_to_json(amr, debug=debug)
+        clauses = json2logic.from_amr(json_list, debug=False)
+
+        relations = amrutil.extract_relations(json_list)
+
+        # cl2 = amrutil.parse_logic_list(json_list)
+        # print(f"\nCLAUSES2:\n{pprint.pformat(cl2, compact=True)}")
+
+        snt_type = predict_snt_type(ud)
+        question = is_question(sent['sentence'])
+
+        context.append({
+            "idx": idx,
+            "type": snt_type_label(snt_type),
+            "question": question,
+            "entities": udutil.get_named_entities(ud),
+            "ud_root": udutil.get_root(ud),
+            "amr_root": amrutil.get_root(json_list)
+        })
+
+        clauses = role_replacer.replace(clauses, snt_type)
+
+        simpl_clauses = simplifier.simplify(clauses, snt_type)
+
+        print(f"AMR:\n{amr}")
+        print(f"\nInitial Clauses ({len(clauses)}):\n{pprint.pformat(clauses, compact=True)}")
+        print(f"\nRelations ({len(relations)}):\n{pprint.pformat(relations, indent=2)}")
 
         if not is_question(sent["sentence"]):
             for k, cl in enumerate(clauses):
+                if len(cl) > 2:
+                    cl[2] = cl[2] + str(idx)
                 clauses[k] = {"@logic": cl}
+
             logic.extend(clauses)
         else:
-            logger.error(f"Question: {c}")
-            question = amr_to_logic(amr, const)
+            logger.error(f"Question: {clauses}")
+            question = json2logic.question_from_amr(amr, const, ud)
 
-    # If we use parsed clauses as a
-    if is_list(question):
+    print("UD:", udutil.print_tree(ud))
+    print(f"\nJSON:\n{pprint.pformat(json_list, compact=True)}")
+    print(f"\nClauses:\n{pprint.pformat(clauses, compact=True)}")
+
+    if isinstance(question, list):
         logger.info("Assign question clauses.")
+        logger.info(f"AMR: {amr}")
         logic = add_question_clauses(logic, question)
-    # elif question_str and 1 == 0:
-    #     logger.info("Assign question.")
-    #     logic = add_question_clauses(logic, question_str)
+
+    print(f"\nContext:\n{pprint.pformat(context)}")
 
     run_solver(logic, print_logic=True)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Convert passage to logical form.')
+    parser.add_argument("passage", nargs="?")
+    parser.add_argument("-r", "--reload", action='store_true',
+                        help="Re-create and fetch parse graphs from server.")
+    parser.add_argument("-x", "--clear", action='store_true', help="Clear console output.")
+    parser.add_argument("-l", "--load", action='store_true', help="Load already saved file.")
+    parser.add_argument("-s", "--save", help="Provide custom name for cache. Otherwise default `cache` is used.")
+    parser.add_argument("-n", "--limit", type=int, help="If set only specified number of sentences are processed.")
+    args = parser.parse_args()
+
+    passage = args.passage
+
+    if args.clear:
+        os.system("clear")
+
+    file = f"./data/{config.cache_file}.json"
+    print("File:", file)
+
+    if args.load:
+        file = f'./data/{args.passage}.json'
+        if not os.path.exists(file):
+            print(f"ERROR: Data file {file} does not exist.")
+            sys.exit(-1)
+
+        print(f"Loading: {file}")
+        with open(file) as f:
+            passage_meta = json.load(f)
+
+    elif args.reload or args.save:
+        passage_meta = api.fetch_parse_from_server(passage)
+        file = f'./data/{config.cache_file}.json'
+        if args.save:
+            file = f'./data/{args.save}.json'
+        with open(file, 'w') as f:
+            json.dump(passage_meta, f, indent=2)
+            logger.info("Saved passage meta.")
+
+    else:
+        with open(file) as f:
+            passage_meta = json.load(f)
+
+    main(passage_meta, args.limit)

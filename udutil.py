@@ -19,18 +19,120 @@ def get_named_entities(snt_ud):
         if tok["ner"] == "O":
             continue
 
+        # print(tok["ner"], tok["text"], tok["lemma"])
+
         prefix = tok["ner"][0]
 
         if prefix == "B":
             name_lst = [tok["text"]]
-        elif prefix == "I-":
+        elif prefix == "I":
             name_lst.append(tok["text"])
         elif prefix in ["E", "S"]:
             name_lst.append(tok["text"])
             entities_lst.append({
                 "text": "_".join(name_lst),
-                "prefix": tok["ner"][2:]}
+                "type": tok["ner"][2:]}
             )
             name_lst = []
 
     return entities_lst
+
+
+# ====== linguistic helpers ========
+
+def get_word_by_keyval(sentence, key, val):
+    if not sentence: return None
+    for word in sentence:
+        if word[key] == val:
+            return word
+    return None
+
+
+def get_word(sentence, val, debug=False):
+    if not sentence: return None
+    for word in sentence:
+        if debug: print(word)
+        if word["text"] == val or word["lemma"] == val:
+            return word
+    return None
+
+
+def get_root(sentence):
+    features = get_word_by_keyval(sentence, "deprel", "root")
+    return {"upos": features["upos"], "lemma": features["lemma"]}
+
+
+# ====== debugging and printing ========
+
+def print_tree(sentence, rootid=0, spaces="", printedids=[], feats=False):
+    if not sentence: return
+    # print("sentence:",sentence)
+    printedids = printedids[::-1]  # copy
+    for word in sentence:
+        # print("word",word)
+        # debug_print("word:",word)
+        if word["head"] == rootid:
+            deprel = word["deprel"]
+
+            if deprel == "punct": continue
+
+            # if deprel=="root": deprel=""
+            if word["id"] in printedids:
+                print(spaces + deprel + ": id " + str(word["id"]))
+            else:
+                print(spaces + deprel + ": " + nice_word_strrep(word, feats))
+                printedids.append(word["id"])
+                print_tree(sentence, word["id"], spaces + "  ", printedids)
+
+
+def nice_word_strrep(word, feats=False):
+    s = word["lemma"]
+    # s += " [id:" + str(word["id"])
+
+    if word["text"] != word["lemma"]:
+        s += f" ({word['text']})"
+
+    # s += " text:" + word["text"]
+
+    s += " upos:" + word["upos"]
+    s += " xpos:" + word["xpos"]
+    s += " lemma:" + word["lemma"]
+    if word["ner"] != "O":
+        s += " ner:" + word["ner"]
+    if feats:
+        if "feats" in word:  s += " feats:" + word["feats"]
+    s += "]"
+    return s
+
+
+def print_plain(snt_ud):
+    from tabulate import tabulate
+
+    del_keys = ["start_char", "end_char"]
+    for del_key in del_keys:
+        snt_ud = [{key: val for key, val in sub.items() if key != del_key} for sub in snt_ud]
+
+    for idx, tok in enumerate(snt_ud):
+        feats = tok.get("feats")
+        if feats:
+            snt_ud[idx]["feats"] = "\n".join(feats.split("|"))
+
+    # [it.update(feats=it.get("feats").split("|")) for it in snt_ud]
+    # [it.update(feats="") for it in snt_ud]
+
+    # print(snt_ud["feats"])
+    # it["feats"] = it["feats"].split("|") # "\n".join()
+
+    headers = {
+        "id": "ID",
+        "deprel": "Deprel",
+        "feats": "Feats",
+        "head": "Head",
+        "lemma": "Lemma",
+        "ner": "NER",
+        "text": "Text",
+        "upos": "upos",
+        "xpos": "xpos"
+    }
+
+    print(tabulate(snt_ud, headers=headers, tablefmt="grid"), 1 * "\n")
