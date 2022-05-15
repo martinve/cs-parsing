@@ -1,3 +1,6 @@
+*.pyc
+*.pyo
 .idea
 server/models
 data/*.json
+__pycache__
