@@ -1,5 +1,6 @@
 import os, sys
 import json
+import math
 
 import config
 import udutil
@@ -65,30 +66,37 @@ def get_xpos(snt_ud, tok_type):
     return ret
 
 
+def get_prediction_confidence(predict):
+    values = predict.values()
+    nummax = sum(1 for value in predict.values() if value == max(values))
+    return math.floor(10 / nummax) / 10
+
+
 def get_snt_type_probabilities(snt_ud, explain=False):
     predict = {
         "sit": 0,
         "concept": 0,
         "fact": 0,
-        "confidence": 0
     }
 
     ner = get_ner(snt_ud)
 
     if ner:
-        if explain: print(f"Clf: NER (sit + 10;fact +5)")
+        if explain: print(f"Clf: NER (sit + 10;fact +11)")
         predict["sit"] += 10
-        predict["fact"] += 5
+        predict["fact"] += 11
     else:
         if explain: print(f"Clf: No NER (fact -5, concept +10)")
         predict["fact"] -= 5
         predict["concept"] += 10
 
     def_article_count = 0
+    indef_article_count = 0
     for art in get_articles(snt_ud):
         if art["lemma"] == "a":
             if explain: print(f"Clf: Indefinite article (concept +10)")
             predict["concept"] += 10
+            indef_article_count += 1
             continue
         if art["lemma"] == "the" and def_article_count == 0:
             if explain: print(f"Clf: Definite article (concept -10)")
@@ -96,7 +104,7 @@ def get_snt_type_probabilities(snt_ud, explain=False):
             def_article_count += 1
             continue
 
-    if def_article_count == 0:
+    if def_article_count == 0 and indef_article_count == 0:
         if explain: print(f"Clf: No definite article (concept +10)")
         predict["concept"] += 10
 
@@ -119,19 +127,20 @@ def get_snt_type_probabilities(snt_ud, explain=False):
             predict["fact"] += 10
             predict["concept"] += 10
 
-    predict["confidence"] = .5
+    predict["confidence"] = get_prediction_confidence(predict)
 
     return predict
 
 
 def predict_snt_type(snt_ud, explain=False):
+    if len(snt_ud) < 2:
+        return 0
+
     if explain:
         udutil.print_plain(snt_ud)
         udutil.print_tree(snt_ud, feats=True)
         print("---")
 
-    if len(snt_ud) < 2:
-        return 0
     pred = get_snt_type_probabilities(snt_ud, explain)
 
     if explain:
