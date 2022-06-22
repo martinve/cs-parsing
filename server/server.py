@@ -1,5 +1,4 @@
-import json
-import os, sys
+import json, os, sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 from unified_parser import get_passage_analysis, init_pipeline
@@ -32,9 +31,6 @@ class MyServer(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(bytes("%s\n" % result, "utf-8"))
 
-
-
-# ====== starting ======
 
 if __name__ == "__main__":
     init_pipeline()

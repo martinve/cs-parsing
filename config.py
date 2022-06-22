@@ -6,6 +6,7 @@ server_port = 5000
 server_host = "localhost"
 server_uri = f"http://{server_host}:{server_port}"
 cache_file = "parser_cache"
+log_file = "server_log"
 
 dummy_name = "Dummyname" # new vars start with this
 question_var = "?:Q"

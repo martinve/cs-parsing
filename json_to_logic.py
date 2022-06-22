@@ -11,13 +11,13 @@ from types_util import is_string, is_op, is_list, is_atom
 
 logic_lst = []
 
-"""
+
 def list_depth(lst):
     if isinstance(lst, list):
         return 1 + max(list_depth(item) for item in lst) if lst else 0
     else:
         return 0
-"""
+
 
 """
 def intersperse(lst, item):
@@ -36,7 +36,7 @@ def is_variable_assignment(cl):
     is_assignment = len(cl) == 2 and \
                     is_string(cl[0]) and \
                     is_string(cl[1]) and \
-                    cl[0] != ":polarity"
+                    cl[0] not in [":polarity"]
 
     if not is_assignment:
         debugger.debug_print(f"Is_variable_assignment={is_assignment} {cl}")
@@ -53,9 +53,13 @@ def is_polarity_modifier(cl):
 
 
 def add_clause(stmt, debug_msg):
+    # pprint.pprint(f"Clauses (len:{len(logic_lst)})")
     logic_lst.append(stmt)
-    if config.debug_graph_construction and debug_msg:
-        logger.info(f"ADD ({debug_msg}): {stmt}")
+    if config.debug_graph_construction:
+        if debug_msg:
+            logger.error(f"add_clause: ({debug_msg}): {stmt}")
+        else:
+            logger.error(f"add_clause: {stmt}")
 
 
 """
@@ -90,7 +94,17 @@ def add_question_clauses(json_logic, question):
     return json_logic
 
 
-def parse_edge(edge, parent, debug=False):
+def simplify_operators(ops):
+    newops = []
+    for it in ops:
+        if is_variable_assignment(it):
+            newops.append(it[1])
+        else:
+            newops.append(it)
+    return newops
+
+
+def parse_edge(edge, parent, debug=True):
     amrutil.check_edge(edge, parent)
 
     if debug:
@@ -100,7 +114,7 @@ def parse_edge(edge, parent, debug=False):
     modifier = edge[2:]
 
     if debug:
-        logger.info(f"IN_1: val({list_depth(value)})={value}, modifier({list_depth(modifier)})={modifier}")
+        logger.debug(f"IN_1: val({list_depth(value)})={value}, modifier({list_depth(modifier)})={modifier}")
 
     # print(f"p={parent}, len={len(val)}, elen={len(edge)}, val={val}")
     # logger.debug(f"val={len(val)}, edge={len(edge)}")
@@ -114,8 +128,19 @@ def parse_edge(edge, parent, debug=False):
         else:
             raise ValueError("Edge must be list", edge, parent)
 
+    # :polarity handling
+    has_polarity = False
     if is_polarity_modifier(edge):
-        print(f"Polarity: edge={edge} parent={parent}")
+        has_polarity = True
+        polarity_mod = edge[1]
+        parent[1] = polarity_mod + parent[1]
+        logger.debug(f"Polarity: mod={polarity_mod} parent={parent}")
+
+    # connectives
+    if edge[1][1] in ["and", "or"]:
+        edge[1] = "CONN:" + edge[1][1]  # ['a', 'and'] -> 'and'
+        parent = edge[1]
+        logger.warning(f"Connective: {edge}")
 
     # Operator merging
     all_ops = True
@@ -126,46 +151,47 @@ def parse_edge(edge, parent, debug=False):
         ops = []
         for it in edge:
             ops.append(it[1])
+        ops = simplify_operators(ops)
         stmt = [parent, ops]
-        add_clause(stmt, "ops")
-        return
 
-        # TODO: Merge the operators
+
+
+        add_clause(stmt, "ops")
+        logger.warning(f"OP STMT {stmt}, parent={parent}, edge={edge}")
+        return
 
     # Name handling
     if ':name' == value[0] and 'name' == value[1][1]:
-
         stmt = amrutil.extract_name_variable(edge)
         add_clause(stmt, "extract_name")
-
         if debug:
-            logger.warning(f"Name: {value}, mod={modifier}")
-            logger.warning("Return after name val parsing.")
+            logger.info(f"Name: {value}, mod={modifier}, stmt={stmt}")
+            logger.info("Return after name extraction.")
         return
-    elif ':polarity' == value[0]:
-        # TODO: Handle polarity
-        # - Assign polarity to next clause
-        if debug:
-            logger.warning(f"Polarity edge={edge}, parent={parent}")
-            pass
-    else:
+
+    if not has_polarity:
         if not isinstance(value, str):
             stmt = [value[0], value[1][1], value[1][0]]
             add_clause(stmt, "edge_val")
 
-    parent = edge[1][0]
+    if not parent:
+        parent = edge[1][0]
 
+    modifier = edge[2:]
     if modifier:
 
         if len(modifier) == 1 and is_list(modifier[0]):
             modifier = modifier[0]
+            logger.warning(f"MOD1 {modifier}")
 
         if value != modifier:
             if not is_atom(modifier):
+                logger.warning(f"Recursive: mod={modifier}")
                 parse_edge(modifier, parent)
             else:
+                logger.warning(f"Atom: mod={modifier}")
                 if debug:
-                    logger.warning(f"Mofifier: {modifier}, edge={value}, parent={parent}")
+                    logger.warning(f"Modifier: {modifier}, edge={value}, parent={parent}")
 
 
 def json_list_to_logic(json_list, debug=False):
@@ -221,7 +247,6 @@ def simplify_clauses(clause_lst):
 
     return simpl_lst
 """
-
 
 
 def question_from_amr(amr_str, constituency, udparse, debug=False):

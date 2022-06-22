@@ -34,7 +34,8 @@ def quote_json_strings(s):
 
 def amr_to_json(amr_str, debug=False):
 
-    if amr_str[0] == "#": amr_str = cleanup_tree(amr_str)
+    if amr_str[0] == "#":
+        amr_str = cleanup_tree(amr_str)
 
     depth = 0
     ret = []
@@ -82,7 +83,8 @@ def amr_to_json(amr_str, debug=False):
                 read_op = False
             else:
                 char = ""
-
+        elif char == "+":
+            char = '"+"'
         ret.append(char)
 
     ret = "".join(ret)
@@ -93,7 +95,7 @@ def amr_to_json(amr_str, debug=False):
     try:
         return_arr = json.loads(ret)
     except:
-        logger.error(f"err: {ret}")
+        logger.error(f"Invalid JSON: {ret}")
         failed.append(ret)
 
     if debug:

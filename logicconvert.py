@@ -20,7 +20,9 @@ from amr_to_json import amr_to_json
 import json_to_logic as json2logic
 from logger import logger
 from solver import run_solver
-from tests.sentence_heuristic_classifier import predict_snt_type, snt_type_label
+
+import tests.sentence_heuristic_classifier as snt_clf
+
 import udutil
 import simplifier
 
@@ -59,39 +61,48 @@ def main(passage_raw, limit=False):
         if isinstance(ud, list) and len(ud) == 1: ud = ud[0]
 
         json_list = amr_to_json(amr, debug=debug)
-        clauses = json2logic.from_amr(json_list, debug=False)
 
-        relations = amrutil.extract_relations(json_list)
+        if len(json_list) == 0:
+            logger.error("Error translating sentence to JSON.")
+            sys.exit(-1)
 
         # cl2 = amrutil.parse_logic_list(json_list)
         # print(f"\nCLAUSES2:\n{pprint.pformat(cl2, compact=True)}")
 
-        snt_type = predict_snt_type(ud)
+        snt_type = snt_clf.predict_snt_type(ud, debug)
         question = is_question(sent['sentence'])
 
-        context.append({
+        cur_context = {
             "idx": idx,
-            "type": snt_type_label(snt_type),
+            "type": snt_clf.snt_type_label(snt_type),
             "question": question,
             "entities": udutil.get_named_entities(ud),
             "ud_root": udutil.get_root(ud),
             "amr_root": amrutil.get_root(json_list)
-        })
+        }
+        context.append(cur_context)
 
-        clauses = role_replacer.replace(clauses, snt_type)
-
-        simpl_clauses = simplifier.simplify(clauses, snt_type)
+        assert(type(cur_context) == dict)
 
         print(f"AMR:\n{amr}")
+
+        clauses = json2logic.from_amr(json_list, debug=False)
+
+        clauses = role_replacer.replace(clauses, cur_context)
         print(f"\nInitial Clauses ({len(clauses)}):\n{pprint.pformat(clauses, compact=True)}")
+
+        simpl_clauses = simplifier.simplify(clauses, snt_type)
+        if simpl_clauses:
+            print(f"\nSimplified Clauses ({len(simpl_clauses)}):\n{pprint.pformat(simpl_clauses, compact=True)}")
+
+        relations = amrutil.extract_relations(json_list)
         print(f"\nRelations ({len(relations)}):\n{pprint.pformat(relations, indent=2)}")
 
         if not is_question(sent["sentence"]):
             for k, cl in enumerate(clauses):
-                if len(cl) > 2:
+                if len(cl) > 2 and isinstance(cl[2], str):
                     cl[2] = cl[2] + str(idx)
                 clauses[k] = {"@logic": cl}
-
             logic.extend(clauses)
         else:
             logger.error(f"Question: {clauses}")

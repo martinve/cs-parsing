@@ -11,6 +11,8 @@ def get_root(amr_graph):
     :param amr_graph:
     :return:
     """
+    print(f"(get_root) amr_graph={amr_graph}")
+
     root_instance = amr_graph[0][1].split("-", 1)[0]
     # print(amr_graph[0][1], "->", root_instance)
     root_word = udutil.get_word(config.snt_ud, root_instance)

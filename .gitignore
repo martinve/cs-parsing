@@ -4,3 +4,4 @@
 server/models
 data/*.json
 __pycache__
+client

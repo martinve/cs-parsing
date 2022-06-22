@@ -9,7 +9,11 @@ class RoleReplacer:
         self.role_dict = config.role_dict
         self.amr_dict = config.amr_dict
 
-    def replace(self, clauses, snt_type):
+    def replace(self, clauses, context):
+        assert(type(context) == dict)
+
+        snt_type = context["type"]
+
         for k, clause in enumerate(clauses):
             clauses[k] = self.replace_roles(clause, snt_type)
             clauses[k] = self.replace_amr_dict_items(clause)
