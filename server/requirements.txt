@@ -1,9 +1,7 @@
-flask
 amrlib
 textacy
 benepar
 stanza
 spacy_stanza
 unidecode
-waitress
 git+https://github.com/hltcoe/PredPatt.git
