@@ -1,3 +1,4 @@
+import json
 import os, sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -19,24 +20,18 @@ class MyServer(BaseHTTPRequestHandler):
         passage = False
         if "passage" in parsed_qs:
             passage = parsed_qs["passage"][0]
-            print("Passage:", passage)
 
         result = False
         if passage:
-            result = parse_text(passage)
-            print("Result", result)
+            result = get_passage_analysis(passage, "default")
+            result = json.dumps(result)
 
         self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header("Content-type", "text/json")
         self.end_headers()
         self.wfile.write(bytes("%s\n" % result, "utf-8"))
 
-
-def parse_text(passage):
-    ret = {"passage": passage}
-    if passage:
-        ret = get_passage_analysis(passage, "default")
-    return ret
 
 
 # ====== starting ======

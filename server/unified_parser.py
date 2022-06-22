@@ -228,14 +228,15 @@ def get_amr_parse(sent):
     return parse
 
 
-def get_passage_analysis(passage: str, context="default"):
+def get_passage_analysis(passage: str, context=False):
     st0 = time.time()
     doc = textacy.make_spacy_doc(passage, lang=nlp)
     debug_print("textacy.make_spacy_doc in:", time.time() - st0)
 
     # debug_print("DOC", type(doc))
 
-    meta = {"passage": passage, "context": context, "sentences": [], "spacy": doc.to_json()}
+    # meta = {"passage": passage, "context": context, "sentences": [], "spacy": doc.to_json()}
+    meta = {"passage": passage, "context": context, "sentences": []}
 
     k = 0
     for sent in doc.sents:
