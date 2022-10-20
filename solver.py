@@ -1,9 +1,11 @@
 import json
+import os
 import subprocess
 import pprint
 
-solver_fname = "./solver/gk"
-solver_in_fname = "./solver/gk_in.js"
+solver_path = os.path.abspath("./solver/")
+solver_fname = solver_path + "/gk"
+solver_in_fname = solver_path + "/gk_in.js"
 
 
 def run_solver(question, print_logic=False):

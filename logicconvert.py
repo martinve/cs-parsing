@@ -26,7 +26,6 @@ import tests.sentence_heuristic_classifier as snt_clf
 import udutil
 import simplifier
 
-
 load_fresh = False
 save_meta = False
 load_meta = True
@@ -36,11 +35,81 @@ def is_question(snt):
     return snt.endswith("?")
 
 
-def main(passage_raw, limit=False):
+def get_sentnence_clauses(sent, idx, debug=False, ud_shift=False, json_ld_logic=True):
+    amr = sent["semparse"]["amr"]
+    ud = sent["semparse"]["ud"]
+    # const = sent["constituency"]
+
+    if ud_shift:
+        config.snt_ud = ud[0]
+    else:
+        config.snt_ud = ud
+
+    role_replacer = RoleReplacer()
+
+    if debug:
+        print("UD:", udutil.print_tree(ud))
+
+    # UD parse fix
+    if isinstance(ud, list) and len(ud) == 1: ud = ud[0]
+
+    json_list = amr_to_json(amr, debug=debug)
+
+    if len(json_list) == 0:
+        logger.error("Error translating sentence to JSON.")
+        sys.exit(-1)
+
+    # cl2 = amrutil.parse_logic_list(json_list)
+    # print(f"\nCLAUSES2:\n{pprint.pformat(cl2, compact=True)}")
+
+    snt_type = snt_clf.predict_snt_type(ud, debug)
+    question = is_question(sent['sentence'])
+
+    cur_context = {
+        "idx": idx,
+        "type": snt_clf.snt_type_label(snt_type),
+        "question": question,
+        "entities": udutil.get_named_entities(ud),
+        "ud_root": udutil.get_root(ud),
+        "amr_root": amrutil.get_root(json_list)
+    }
+
+    assert (type(cur_context) == dict)
+
+    print(f"AMR:\n{amr}")
+
+    clauses = json2logic.from_amr(json_list, debug=False)
+
+    clauses = role_replacer.replace(clauses, cur_context)
+    print(f"\nInitial Clauses ({len(clauses)}):\n{pprint.pformat(clauses, compact=True)}")
+
+    simpl_clauses = simplifier.simplify(clauses, snt_type)
+    if simpl_clauses:
+        print(f"\nSimplified Clauses ({len(simpl_clauses)}):\n{pprint.pformat(simpl_clauses, compact=True)}")
+
+    relations = amrutil.extract_relations(json_list)
+    print(f"\nRelations ({len(relations)}):\n{pprint.pformat(relations, indent=2)}")
+
+
+    if not is_question(sent["sentence"]):
+        for k, cl in enumerate(clauses):
+            if len(cl) > 2 and isinstance(cl[2], str):
+                cl[2] = cl[2] + str(idx)
+            if json_ld_logic:
+                clauses[k] = {"@logic": cl}
+            else:
+                clauses[k] = cl
+        return clauses, cur_context
+    else:
+        logger.error(f"Question: {clauses}")
+        question = json2logic.question_from_amr(amr, ud)
+
+
+def main(passage_raw, limit=False, debug=False):
+    assert isinstance(passage_raw, dict)
+
     logic = []
     question = None
-
-    debug = config.debug_clauses
 
     if limit:
         passage_raw["sentences"] = passage_raw["sentences"][:limit]
@@ -48,76 +117,20 @@ def main(passage_raw, limit=False):
 
     context = []
 
-    role_replacer = RoleReplacer()
-
     for idx, sent in enumerate(passage_raw['sentences']):
-        amr = sent["semparse"]["amr"]
-        ud = sent["semparse"]["ud"]
-        const = sent["constituency"]
-
-        config.snt_ud = ud[0]
-
-        # UD parse fix
-        if isinstance(ud, list) and len(ud) == 1: ud = ud[0]
-
-        json_list = amr_to_json(amr, debug=debug)
-
-        if len(json_list) == 0:
-            logger.error("Error translating sentence to JSON.")
-            sys.exit(-1)
-
-        # cl2 = amrutil.parse_logic_list(json_list)
-        # print(f"\nCLAUSES2:\n{pprint.pformat(cl2, compact=True)}")
-
-        snt_type = snt_clf.predict_snt_type(ud, debug)
-        question = is_question(sent['sentence'])
-
-        cur_context = {
-            "idx": idx,
-            "type": snt_clf.snt_type_label(snt_type),
-            "question": question,
-            "entities": udutil.get_named_entities(ud),
-            "ud_root": udutil.get_root(ud),
-            "amr_root": amrutil.get_root(json_list)
-        }
-        context.append(cur_context)
-
-        assert(type(cur_context) == dict)
-
-        print(f"AMR:\n{amr}")
-
-        clauses = json2logic.from_amr(json_list, debug=False)
-
-        clauses = role_replacer.replace(clauses, cur_context)
-        print(f"\nInitial Clauses ({len(clauses)}):\n{pprint.pformat(clauses, compact=True)}")
-
-        simpl_clauses = simplifier.simplify(clauses, snt_type)
-        if simpl_clauses:
-            print(f"\nSimplified Clauses ({len(simpl_clauses)}):\n{pprint.pformat(simpl_clauses, compact=True)}")
-
-        relations = amrutil.extract_relations(json_list)
-        print(f"\nRelations ({len(relations)}):\n{pprint.pformat(relations, indent=2)}")
-
-        if not is_question(sent["sentence"]):
-            for k, cl in enumerate(clauses):
-                if len(cl) > 2 and isinstance(cl[2], str):
-                    cl[2] = cl[2] + str(idx)
-                clauses[k] = {"@logic": cl}
-            logic.extend(clauses)
-        else:
-            logger.error(f"Question: {clauses}")
-            question = json2logic.question_from_amr(amr, const, ud)
-
-    print("UD:", udutil.print_tree(ud))
-    print(f"\nJSON:\n{pprint.pformat(json_list, compact=True)}")
-    print(f"\nClauses:\n{pprint.pformat(clauses, compact=True)}")
+        clauses, snt_ctx = get_sentnence_clauses(sent, idx, debug=False, ud_shift=True)
+        logic.extend(clauses)
+        context.append(snt_ctx)
 
     if isinstance(question, list):
         logger.info("Assign question clauses.")
         logger.info(f"AMR: {amr}")
         logic = add_question_clauses(logic, question)
 
-    print(f"\nContext:\n{pprint.pformat(context)}")
+    if debug:
+        print(f"\nContext:\n{pprint.pformat(context)}")
+        print(f"\nJSON:\n{pprint.pformat(json_list, compact=True)}")
+        print(f"\nClauses:\n{pprint.pformat(clauses, compact=True)}")
 
     run_solver(logic, print_logic=True)
 
@@ -164,4 +177,6 @@ if __name__ == "__main__":
         with open(file) as f:
             passage_meta = json.load(f)
 
-    main(passage_meta, args.limit)
+    debug = config.debug_clauses
+
+    main(passage_meta, args.limit, debug)

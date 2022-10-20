@@ -79,6 +79,10 @@ def get_snt_type_probabilities(snt_ud, explain=False):
         "fact": 0,
     }
 
+    # snt ud must not be formatted
+    if isinstance(snt_ud, str):
+        return predict
+
     ner = get_ner(snt_ud)
 
     if ner:

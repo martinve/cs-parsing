@@ -10,11 +10,16 @@ sys.path.append(parent)
 import config
 
 
+
 class MyServer(BaseHTTPRequestHandler):
     def do_GET(self):
 
+        print("Path:", self.path)
+
         qs = urlparse(self.path).query
         parsed_qs = parse_qs(qs)
+
+        print("Parsed", parsed_qs)
 
         passage = False
         if "passage" in parsed_qs:
@@ -39,7 +44,7 @@ if __name__ == "__main__":
     server_port = config.server_port
 
     webServer = HTTPServer((host_name, server_port), MyServer)
-    print("Server started http://%s:%s" % (host_name, server_port))
+    print("Server started at http://%s:%s" % (host_name, server_port))
 
     try:
         buffer = 1

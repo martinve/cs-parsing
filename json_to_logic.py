@@ -137,10 +137,14 @@ def parse_edge(edge, parent, debug=True):
         logger.debug(f"Polarity: mod={polarity_mod} parent={parent}")
 
     # connectives
-    if edge[1][1] in ["and", "or"]:
-        edge[1] = "CONN:" + edge[1][1]  # ['a', 'and'] -> 'and'
-        parent = edge[1]
-        logger.warning(f"Connective: {edge}")
+    try:
+        if len(edge) > 1 and edge[1][1] in ["and", "or"]:
+            edge[1] = "CONN:" + edge[1][1]  # ['a', 'and'] -> 'and'
+            parent = edge[1]
+            logger.warning(f"Connective: {edge}")
+    except IndexError:
+        pass
+
 
     # Operator merging
     all_ops = True
@@ -249,13 +253,14 @@ def simplify_clauses(clause_lst):
 """
 
 
-def question_from_amr(amr_str, constituency, udparse, debug=False):
+def question_from_amr(amr_str, udparse, constituency=False, debug=False):
     data = {
         "amr": amr_str,
         "const": constituency,
         "ud": udparse
     }
     pprint.pprint(data, indent=2)
+    return []
     return logic_from_amr(amr_str, constituency, debug=False)
 
 

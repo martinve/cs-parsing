@@ -1,19 +1,16 @@
 import json
-import re
 import sys, os
 import subprocess
 import warnings
 import amrlib
-import penman
 import textacy
-import spacy
-import benepar
 import time
 
 
 from logger import logger
 
 import stanza
+import benepar
 import spacy_stanza
 
 current = os.path.dirname(os.path.realpath(__file__))

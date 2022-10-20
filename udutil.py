@@ -12,6 +12,9 @@ def get_named_entities(snt_ud):
     :return: dictionary of named entities and its prefix
     """
 
+    if isinstance(snt_ud, str):
+        return []
+
     entities_lst = []
     name_lst = []
 
@@ -58,11 +61,17 @@ def get_word(sentence, val, debug=False):
 
 
 def get_root(sentence):
+    if isinstance(sentence, str):
+        return ""
+
     features = get_word_by_keyval(sentence, "deprel", "root")
     return {"upos": features["upos"], "lemma": features["lemma"]}
 
 
 # ====== debugging and printing ========
+
+ud_tree_lst = []
+
 
 def print_tree(sentence, rootid=0, spaces="", printedids=[], feats=False):
     if not sentence: return
@@ -78,9 +87,13 @@ def print_tree(sentence, rootid=0, spaces="", printedids=[], feats=False):
 
             # if deprel=="root": deprel=""
             if word["id"] in printedids:
-                print(spaces + deprel + ": id " + str(word["id"]))
+                out =  spaces + deprel + ": id " + str(word["id"])
+                print(out)
+                ud_tree_lst.append(out)
             else:
-                print(spaces + deprel + ": " + nice_word_strrep(word, feats))
+                out = spaces + deprel + ": " + nice_word_strrep(word, feats)
+                print(out)
+                ud_tree_lst.append(out)
                 printedids.append(word["id"])
                 print_tree(sentence, word["id"], spaces + "  ", printedids)
 
@@ -106,6 +119,7 @@ def nice_word_strrep(word, feats=False):
 
 
 def print_plain(snt_ud):
+
     from tabulate import tabulate
 
     del_keys = ["start_char", "end_char"]
@@ -136,3 +150,39 @@ def print_plain(snt_ud):
     }
 
     print(tabulate(snt_ud, headers=headers, tablefmt="grid"), 1 * "\n")
+
+
+def lst_to_dict(lst):
+    res_dct = {lst[i]: lst[i + 1] for i in range(0, len(lst), 2)}
+    return res_dct
+
+
+def extract_tree(sentence, rootid=0, spaces="", printedids=[], feats=False):
+    if not sentence: return
+    # print("sentence:",sentence)
+    printedids = printedids[::-1]  # copy
+    for word in sentence:
+        if word["head"] == rootid:
+            deprel = word["deprel"]
+            if deprel == "punct": continue
+            if word["id"] in printedids:
+                out =  spaces + deprel + ": id " + str(word["id"])
+                ud_tree_lst.append(out)
+            else:
+                out = spaces + deprel + ": " + nice_word_strrep(word, feats)
+                ud_tree_lst.append(out)
+                printedids.append(word["id"])
+                print_tree(sentence, word["id"], spaces + "  ", printedids)
+    return ud_tree_lst
+
+
+def format_ud(ud):
+    assert isinstance(ud, list)
+    ud = ud[0]
+    ud_dict = ud
+    ud_tree_lst.clear()
+    tree = extract_tree(ud_dict, feats=True)
+    return tree
+
+
+

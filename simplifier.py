@@ -12,14 +12,17 @@ def simplify(clauses, snt_type):
     logger.warning("TODO: Implement simplifier.simplify()")
 
     var_dict = {}
-    for cl in clauses:
-        # logger.info(f"Clause: {cl}")
-        if len(cl) == 2 and isinstance(cl[0], str) and isinstance(cl[1], str):
-            var_dict[cl[0]] = cl[1]
-        if cl[1] in ["and", "or"]:
-            cl[2] = find_one(clauses, "conn:" + cl[1])[1:][0]
-            cl[1] = "$" + cl[1]
-    return clauses
+    try:
+        for cl in clauses:
+            # logger.info(f"Clause: {cl}")
+            if len(cl) == 2 and isinstance(cl[0], str) and isinstance(cl[1], str):
+                var_dict[cl[0]] = cl[1]
+            if cl[1] in ["and", "or"]:
+                cl[2] = find_one(clauses, "conn:" + cl[1])[1:][0]
+                cl[1] = "$" + cl[1]
+        return clauses
+    except TypeError:
+        return []
 
 
 def find(clause_list, idx0=False, idx1=False, idx2=False):
@@ -38,7 +41,9 @@ def find(clause_list, idx0=False, idx1=False, idx2=False):
 
 
 def find_one(clause_list, idx0=False, idx1=False, idx2=False):
-    return find(clause_list, idx0, idx1, idx2)[0]
-
+    try:
+        return find(clause_list, idx0, idx1, idx2)[0]
+    except IndexError:
+        pass
 
     # logger.info(f"Variables: {var_dict}")

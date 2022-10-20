@@ -1,8 +1,18 @@
 import sys
 import warnings
 
+import penman
+
 import udutil
 import config
+
+
+def format_amr(amr_graph):
+    ret = []
+    for line in amr_graph.split("\n"):
+        if line[0] != "#":
+            ret.append(line)
+    return "\n".join(ret)
 
 
 def get_root(amr_graph):
@@ -73,8 +83,6 @@ def extract_relations(lst, parent=None, debug=False):
     return relations
 
 
-
-
 """
 def parse_logic_list(lst, parent=None):
     for edge in lst:
@@ -89,6 +97,65 @@ def parse_logic_list(lst, parent=None):
 
         print("len:", len(edge), "parent: ", parent, edge)
 """
+
+
+def generate_clauses(amr_string):
+    import penman
+    import json
+    from server.unified_parser import format_variable, format_clause, format_constant
+    """
+    Generate clauses from AMR string
+    """
+    g = penman.decode(amr_string)
+
+    constant_dict = {}
+    for c in g.attributes():
+        constant_dict[c[0]] = c[1]
+
+    clauses = []
+
+    # Get base concepts
+    for inst in g.instances():
+        value = format_variable(inst[0])
+
+        # We do not create clauses for constants
+        if inst[0] in constant_dict:
+            continue
+
+        arity = max(
+            len(g.edges(source=inst[0])),
+            len(g.edges(target=inst[0]))
+        )
+
+        expr = [inst[2], value]
+        if arity > 1:
+            for edge in g.edges(source=inst[0]):
+                val = format_variable(edge[2])
+                if edge[2] in constant_dict:
+                    val = format_constant(edge[2])
+                expr.append(val)
+        clauses.append(expr)
+
+    # Get concept relations
+    for rel in g.edges():
+        value = format_variable(rel[2])
+        constants = g.attributes(source=rel[2])
+        if len(constants) > 0:
+            value = format_constant(constants[0][2])
+
+        predicate = format_clause(rel[1])
+
+        if predicate in config.role_dict.keys():
+            predicate = config.role_dict[predicate]
+
+        clause = [
+            predicate,
+            format_variable(rel[0]),
+            value]
+        clauses.append(clause)
+
+    # return json.dumps(intersperse(clauses, "&"))
+    return json.dumps(clauses)
 
 
 def parse_logic_list_(json_list, depth=0, parse=[]):
@@ -118,3 +185,64 @@ def parse_logic_list_(json_list, depth=0, parse=[]):
 
     # print(parse)
     # sys.exit(-1)
+
+
+def replace_role(rel):
+    rel_replace_dict = {
+        ":domain": "isa",
+        ":name": "hasName",
+        ":location": "locatedAt",
+        ":poss": "belongsTo",
+        ":ARG0": "agent",
+        ":ARG1": "patient",
+        "i": "me"
+    }
+    if rel in rel_replace_dict.keys():
+        rel = rel_replace_dict[rel]
+    return rel
+
+
+def assign_value(o, attrs):
+    if o in attrs.keys():
+        o = attrs[o]
+    return o
+
+
+def get_simplified_logic(amr_str):
+    g = penman.decode(amr_str)
+
+    attrs = {}
+    polarity = []
+    for s, v, o in g.attributes():
+        if v == ":polarity":
+            polarity.append([s, o])
+            continue
+
+        if s not in attrs.keys():
+            attrs[s] = []
+
+        o = o.strip('\"')
+        attrs[s].append(o)
+
+    for a in attrs.keys():
+        if isinstance(attrs[a], list):
+            attrs[a] = "_".join(attrs[a])
+
+    concepts = []
+    for s, v, o in g.instances():
+        if o not in ["name"]:
+            for p in polarity:
+                if p[0] == s:
+                    o = "-" + o
+            concepts.append([o, s])
+
+    rels = []
+    for s, v, o in g.edges():
+        if s == o:
+            continue
+        print(s, v, o)
+        rel = [replace_role(v), s, assign_value(o, attrs)]
+        rels.append(rel)
+
+    logic = concepts + rels
+    return logic
