@@ -1,0 +1,48 @@
+[{
+    'deprel': 'nsubj',
+    'end_char': 4,
+    'feats': 'Number=Plur',
+    'head': 3,
+    'id': 1,
+    'lemma': 'cat',
+    'ner': 'O',
+    'start_char': 0,
+    'text': 'Cats',
+    'upos': 'NOUN',
+    'xpos': 'NNS'
+}, {
+    'deprel': 'cop',
+    'end_char': 8,
+    'feats': 'Mood=Ind|Tense=Pres|VerbForm=Fin',
+    'head': 3,
+    'id': 2,
+    'lemma': 'be',
+    'ner': 'O',
+    'start_char': 5,
+    'text': 'are',
+    'upos': 'AUX',
+    'xpos': 'VBP'
+}, {
+    'deprel': 'root',
+    'end_char': 16,
+    'feats': 'Number=Plur',
+    'head': 0,
+    'id': 3,
+    'lemma': 'animal',
+    'ner': 'O',
+    'start_char': 9,
+    'text': 'animals',
+    'upos': 'NOUN',
+    'xpos': 'NNS'
+}, {
+    'deprel': 'punct',
+    'end_char': 17,
+    'head': 3,
+    'id': 4,
+    'lemma': '.',
+    'ner': 'O',
+    'start_char': 16,
+    'text': '.',
+    'upos': 'PUNCT',
+    'xpos': '.'
+}]

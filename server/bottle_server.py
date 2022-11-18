@@ -94,14 +94,7 @@ def post_parse(db):
         json.dump(parse_json, f, indent=2)
 
     last_id = persist.db_persist_parse(db, parse_json)
-
-    logic_json = logicconvert.main(parse_json, debug=False)
-    # return json.dumps()
-    # return json.dumps(parse_json)
-
     redirect(f"/passage/{last_id}")
-
-    return json.dumps(logic_json)
 
 
 @app.get("/passage/:id")

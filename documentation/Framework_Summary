@@ -1,0 +1,124 @@
+## UFramework Summary
+
+## AMR
+
+Unit of annotation: sentence
+Base language: English
+Datasets: PropBank framesets, English words, framework-dependent keywords
+Key features: PropBank semantic roles; within sentence co-reference; NER and types; modality; negation; questions; quantities.
+Format: Single rooted DAG
+Notation: Penman
+Extensions: DAMR (disjunctive AMR)
+Level: deep-semantic
+Limitations: Lack of universal quantifier 'all'. No real vs hypothetical event structure. 
+
+@paper: Abstract Meaning Representation for Sembanking. https://aclanthology.org/W13-2322/
+
+## UCCALi
+
+Unit of annotation: sentence
+Base language: language agnostic
+Datasets: Self annotation of large corpora
+Includes: Relations between clauses (linkages); distinction between core arguments and ajduncts. Scene focused annotations.
+Format: Single rooted DAG
+Notation: XML
+Extensions: Domain specific annotations, partially automated.
+Level: deep-semantic
+Limitations: Need to annotate additional layers.
+Foundations: Basic Linguistic Theory (BLT)
+
+@paper: UCCA: A Semantics-based Grammatical Annotation Scheme. https://aclanthology.org/W13-0101
+@paper: Universal Conceptual Cognitive Annotation (UCCA)
+
+
+## UD
+
+Unit of annotation: sentence 
+Base language: cross-linguistic 130 languages supported
+Datasets: Stanford Dependencies, Google universal POS tags, Interlingua
+Includes: Unified linguistic typology across languages
+Format: dependency grammar
+Notation: monostratal tree, relations encoded as labels
+Extensions: 
+Level: morphosyntactic
+Limitations: based on grammatical functions not semantic roles
+Foundations:
+
+@paper: Universal Dependencies. https://direct.mit.edu/coli/article/47/2/255/98516/Universal-Dependencies
+
+## Elementary Dependency Structures
+
+Unit of annotation: sentence
+Base language: 
+Datasets: 
+Includes: 
+Format: 
+Notation: 
+Extensions: 
+Level: 
+Limitations: 
+Foundations:  Functional Generative Description of language (FGD)
+
+## Prague Tectogrammatical Graphs
+
+Unit of annotation: sentence
+Base language: English and Czech
+Datasets: Prague Dependency Treebank (PDT)
+Includes: 
+Format: Graph
+Notation: Prague Semantic Dependencies
+Extensions: 
+Level: word, morphological, surface-syntactic (analytical), deep-syntactic (tectogrammatical)
+Limitations: 
+Foundations: Reduction of MRS logical forms to variable free form
+
+## Discourse Representation Structures
+
+Unit of annotation: passage
+Base language: 
+Datasets: 
+Includes: anaphora resolution.
+Format: predicate logic (@paper: https://aclanthology.org/2020.conll-shared.2.pdf)
+Notation: first order logic
+Extensions: DRGs (Discourse Representation Graphs)
+Level: dynamic-semantic. Meaning of sentence is defined how it can change the context. 
+Limitations: Discourse Representation Therory
+
+@examples: https://www.coli.uni-saarland.de/projects/milca/courses/comsem/html/node210.html
+
+
+## Universal Decompositional Semantics
+
+Unit of annotation: 
+Base language: 
+Datasets: 
+Includes: 
+Format: 
+Notation: 
+Extensions: 
+Level: 
+Limitations: 
+
+
+
+
+
+-----
+
+
+
+
+
+
+
+### Evaluation checklist
+
+Unit of annotation: 
+Base language: 
+Datasets: 
+Includes: 
+Format: 
+Notation: 
+Extensions: 
+Level: 
+Limitations: 

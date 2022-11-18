@@ -1,0 +1,179 @@
+root: kill [id:7 text:killed upos:VERB xpos:VBD lemma:kill ner:O feats:Mood=Ind|Tense=Past|VerbForm=Fin]
+  nsubj: someone [id:1 text:Someone upos:PRON xpos:NN lemma:someone ner:O feats:Number=Sing]
+    acl:relcl: live [id:3 text:lives upos:VERB xpos:VBZ lemma:live ner:O feats:Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin]
+      nsubj: who [id:2 text:who upos:PRON xpos:WP lemma:who ner:O feats:PronType=Rel]
+      obl: Mansion [id:6 text:Mansion upos:PROPN xpos:NNP lemma:Mansion ner:E-FAC feats:Number=Sing]
+        case: in [id:4 text:in upos:ADP xpos:IN lemma:in ner:O]
+        compound: Dreadbury [id:5 text:Dreadbury upos:PROPN xpos:NNP lemma:Dreadbury ner:B-FAC feats:Number=Sing]
+  obj: aunt [id:8 text:Aunt upos:PROPN xpos:NNP lemma:aunt ner:B-PERSON feats:Number=Sing]
+    flat: Agatha [id:9 text:Agatha upos:PROPN xpos:NNP lemma:Agatha ner:E-PERSON feats:Number=Sing]
+  punct: . [id:10 text:. upos:PUNCT xpos:. lemma:. ner:O]
+---
+root: live [id:8 text:live upos:VERB xpos:VBP lemma:live ner:O feats:Mood=Ind|Tense=Pres|VerbForm=Fin]
+  nsubj: Agatha [id:1 text:Agatha upos:PROPN xpos:NNP lemma:Agatha ner:S-PERSON feats:Number=Sing]
+    conj: butler [id:4 text:butler upos:NOUN xpos:NN lemma:butler ner:O feats:Number=Sing]
+      punct: , [id:2 text:, upos:PUNCT xpos:, lemma:, ner:O]
+      det: the [id:3 text:the upos:DET xpos:DT lemma:the ner:O feats:Definite=Def|PronType=Art]
+    conj: Charles [id:7 text:Charles upos:PROPN xpos:NNP lemma:Charles ner:S-PERSON feats:Number=Sing]
+      punct: , [id:5 text:, upos:PUNCT xpos:, lemma:, ner:O]
+      cc: and [id:6 text:and upos:CCONJ xpos:CC lemma:and ner:O]
+  obl: Mansion [id:11 text:Mansion upos:PROPN xpos:NNP lemma:Mansion ner:E-FAC feats:Number=Sing]
+    case: in [id:9 text:in upos:ADP xpos:IN lemma:in ner:O]
+    compound: Dreadbury [id:10 text:Dreadbury upos:PROPN xpos:NNP lemma:Dreadbury ner:B-FAC feats:Number=Sing]
+  conj: people [id:17 text:people upos:NOUN xpos:NNS lemma:people ner:O feats:Number=Plur]
+    punct: , [id:12 text:, upos:PUNCT xpos:, lemma:, ner:O]
+    cc: and [id:13 text:and upos:CCONJ xpos:CC lemma:and ner:O]
+    cop: be [id:14 text:are upos:AUX xpos:VBP lemma:be ner:O feats:Mood=Ind|Tense=Pres|VerbForm=Fin]
+    det: the [id:15 text:the upos:DET xpos:DT lemma:the ner:O feats:Definite=Def|PronType=Art]
+    amod: only [id:16 text:only upos:ADJ xpos:JJ lemma:only ner:O feats:Degree=Pos]
+    acl:relcl: live [id:19 text:live upos:VERB xpos:VBP lemma:live ner:O feats:Mood=Ind|Tense=Pres|VerbForm=Fin]
+      nsubj: who [id:18 text:who upos:PRON xpos:WP lemma:who ner:O feats:PronType=Rel]
+      advmod: therein [id:20 text:therein upos:ADV xpos:RB lemma:therein ner:O]
+  punct: . [id:21 text:. upos:PUNCT xpos:. lemma:. ner:O]
+---
+root: hate [id:4 text:hates upos:VERB xpos:VBZ lemma:hate ner:O feats:Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin]
+  nsubj: killer [id:2 text:killer upos:NOUN xpos:NN lemma:killer ner:O feats:Number=Sing]
+    det: a [id:1 text:A upos:DET xpos:DT lemma:a ner:O feats:Definite=Ind|PronType=Art]
+  advmod: always [id:3 text:always upos:ADV xpos:RB lemma:always ner:O]
+  obj: victim [id:6 text:victim upos:NOUN xpos:NN lemma:victim ner:O feats:Number=Sing]
+    nmod:poss: he [id:5 text:his upos:PRON xpos:PRP$ lemma:he ner:O feats:Gender=Masc|Number=Sing|Person=3|Poss=Yes|PronType=Prs]
+  conj: richer [id:11 text:richer upos:ADJ xpos:JJR lemma:richer ner:O feats:Degree=Cmp]
+    punct: , [id:7 text:, upos:PUNCT xpos:, lemma:, ner:O]
+    cc: and [id:8 text:and upos:CCONJ xpos:CC lemma:and ner:O]
+    cop: be [id:9 text:is upos:AUX xpos:VBZ lemma:be ner:O feats:Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin]
+    advmod: never [id:10 text:never upos:ADV xpos:RB lemma:never ner:O]
+    obl: victim [id:14 text:victim upos:NOUN xpos:NN lemma:victim ner:O feats:Number=Sing]
+      case: than [id:12 text:than upos:ADP xpos:IN lemma:than ner:O]
+      nmod:poss: he [id:13 text:his upos:PRON xpos:PRP$ lemma:he ner:O feats:Gender=Masc|Number=Sing|Person=3|Poss=Yes|PronType=Prs]
+  punct: . [id:15 text:. upos:PUNCT xpos:. lemma:. ner:O]
+---
+root: hate [id:2 text:hates upos:VERB xpos:VBZ lemma:hate ner:O feats:Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin]
+  nsubj: Charles [id:1 text:Charles upos:PROPN xpos:NNP lemma:Charles ner:S-PERSON feats:Number=Sing]
+  obj: one [id:4 text:one upos:NOUN xpos:NN lemma:one ner:O feats:Number=Sing]
+    det: no [id:3 text:no upos:DET xpos:DT lemma:no ner:O]
+    acl:relcl: hate [id:8 text:hates upos:VERB xpos:VBZ lemma:hate ner:O feats:Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin]
+      obj: that [id:5 text:that upos:PRON xpos:WDT lemma:that ner:O feats:PronType=Rel]
+      nsubj: aunt [id:6 text:Aunt upos:PROPN xpos:NNP lemma:aunt ner:B-PERSON feats:Number=Sing]
+        flat: Agatha [id:7 text:Agatha upos:PROPN xpos:NNP lemma:Agatha ner:E-PERSON feats:Number=Sing]
+  punct: . [id:9 text:. upos:PUNCT xpos:. lemma:. ner:O]
+---
+root: hate [id:2 text:hates upos:VERB xpos:VBZ lemma:hate ner:O feats:Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin]
+  nsubj: Agatha [id:1 text:Agatha upos:PROPN xpos:NNP lemma:Agatha ner:S-PERSON feats:Number=Sing]
+  obj: everyone [id:3 text:everyone upos:PRON xpos:NN lemma:everyone ner:O feats:Number=Sing]
+  obl: butler [id:6 text:butler upos:NOUN xpos:NN lemma:butler ner:O feats:Number=Sing]
+    case: except [id:4 text:except upos:ADP xpos:IN lemma:except ner:O]
+    det: the [id:5 text:the upos:DET xpos:DT lemma:the ner:O feats:Definite=Def|PronType=Art]
+  punct: . [id:7 text:. upos:PUNCT xpos:. lemma:. ner:O]
+---
+root: hate [id:3 text:hates upos:VERB xpos:VBZ lemma:hate ner:O feats:Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin]
+  nsubj: butler [id:2 text:butler upos:NOUN xpos:NN lemma:butler ner:O feats:Number=Sing]
+    det: the [id:1 text:The upos:DET xpos:DT lemma:the ner:O feats:Definite=Def|PronType=Art]
+  obj: everyone [id:4 text:everyone upos:PRON xpos:NN lemma:everyone ner:O feats:Number=Sing]
+    amod: richer [id:6 text:richer upos:ADJ xpos:JJR lemma:richer ner:O feats:Degree=Cmp]
+      advmod: not [id:5 text:not upos:ADV xpos:RB lemma:not ner:O]
+      obl: aunt [id:8 text:Aunt upos:PROPN xpos:NNP lemma:aunt ner:B-PERSON feats:Number=Sing]
+        case: than [id:7 text:than upos:ADP xpos:IN lemma:than ner:O]
+        flat: Agatha [id:9 text:Agatha upos:PROPN xpos:NNP lemma:Agatha ner:E-PERSON feats:Number=Sing]
+  punct: . [id:10 text:. upos:PUNCT xpos:. lemma:. ner:O]
+---
+root: hate [id:3 text:hates upos:VERB xpos:VBZ lemma:hate ner:O feats:Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin]
+  nsubj: butler [id:2 text:butler upos:NOUN xpos:NN lemma:butler ner:O feats:Number=Sing]
+    det: the [id:1 text:The upos:DET xpos:DT lemma:the ner:O feats:Definite=Def|PronType=Art]
+  obj: everyone [id:4 text:everyone upos:PRON xpos:NN lemma:everyone ner:O feats:Number=Sing]
+    acl:relcl: hate [id:7 text:hates upos:VERB xpos:VBZ lemma:hate ner:O feats:Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin]
+      nsubj: aunt [id:5 text:Aunt upos:PROPN xpos:NNP lemma:aunt ner:B-PERSON feats:Number=Sing]
+        flat: Agatha [id:6 text:Agatha upos:PROPN xpos:NNP lemma:Agatha ner:E-PERSON feats:Number=Sing]
+  punct: . [id:8 text:. upos:PUNCT xpos:. lemma:. ner:O]
+---
+root: hate [id:3 text:hates upos:VERB xpos:VBZ lemma:hate ner:O feats:Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin]
+  nsubj: one [id:2 text:one upos:NOUN xpos:NN lemma:one ner:O feats:Number=Sing]
+    det: no [id:1 text:No upos:DET xpos:DT lemma:no ner:O]
+  obj: everyone [id:4 text:everyone upos:PRON xpos:NN lemma:everyone ner:O feats:Number=Sing]
+  punct: . [id:5 text:. upos:PUNCT xpos:. lemma:. ner:O]
+---
+root: butler [id:5 text:butler upos:NOUN xpos:NN lemma:butler ner:O feats:Number=Sing]
+  nsubj: Agatha [id:1 text:Agatha upos:PROPN xpos:NNP lemma:Agatha ner:S-PERSON feats:Number=Sing]
+  cop: be [id:2 text:is upos:AUX xpos:VBZ lemma:be ner:O feats:Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin]
+  advmod: not [id:3 text:not upos:PART xpos:RB lemma:not ner:O]
+  det: the [id:4 text:the upos:DET xpos:DT lemma:the ner:O feats:Definite=Def|PronType=Art]
+  punct: . [id:6 text:. upos:PUNCT xpos:. lemma:. ner:O]
+---
+
+prover input:
+ [ {"@logic": ["instance", "kill-01", "k0"]},
+  {"@logic": ["agent", "someone", "s0"]},
+  {"@logic": [":arg0-of", "live-01", "l0"]},
+  {"@logic": [":location", "house", "h0"]},
+  {"@logic": ["name", "dreadbury_mansion", "h0"]},
+  {"@logic": ["patient", "person", "p0"]},
+  {"@logic": ["name", "aunt_agatha", "p0"]},
+  {"@logic": ["instance", "and", "a1"]},
+  {"@logic": [":op1", "live-01", "l1"]},
+  { "@logic": [ [ ":arg0",
+                  ["a2", "and"],
+                  [ ":op1",
+                    ["p", "person"],
+                    [":name", ["n", "name"], [":op1", "agatha"]],
+                    [ ":arg0-of",
+                      ["h", "have-org-role-91"],
+                      [":arg2", ["b", "butler"]]]],
+                  [ ":op2",
+                    ["p2", "person"],
+                    [":name", ["n2", "name"], [":op1", "charles"]]]],
+                ["f", "facility"],
+                ":location1"]},
+  {"@logic": [":op2", "person", "p31"]},
+  {"@logic": [[":mod", ["o", "only"]], ["l2", "live-01"], ":arg0-of1"]},
+  {"@logic": ["instance", "and", "a2"]},
+  {"@logic": [":op1", "hate-01", "h2"]},
+  { "@logic": [ [":arg0", ["p", "person"], [":arg0-of", ["k", "kill-01"]]],
+                ["p2", "person"],
+                ":arg12"]},
+  {"@logic": [":time", "always", "a22"]},
+  {"@logic": [":op2", "have-degree-91", "h22"]},
+  {"@logic": [[":polarity", "-"], "p", ":arg12"]},
+  {"@logic": [[":arg2", ["r", "rich"]], ["m", "more"], ":arg32"]},
+  {"@logic": [[":arg4", "p2"], ["e", "ever"], ":time2"]},
+  {"@logic": ["instance", "hate-01", "h3"]},
+  {"@logic": ["agent", "person", "p3"]},
+  {"@logic": ["name", "charles", "p3"]},
+  {"@logic": ["patient", "no-one", "n23"]},
+  {"@logic": [":arg1-of", "resemble-01", "r3"]},
+  {"@logic": ["instrument", "hate-01", "h23"]},
+  { "@logic": [ [ ":arg0",
+                  ["p2", "person"],
+                  [ ":name",
+                    ["n3", "name"],
+                    [":op1", "aunt"],
+                    [":op2", "agatha"]]],
+                "p",
+                ":arg13"]},
+  {"@logic": ["instance", "hate-01", "h4"]},
+  {"@logic": ["agent", "person", "p4"]},
+  {"@logic": ["name", "agatha", "p4"]},
+  {"@logic": ["patient", "everyone", "e4"]},
+  {"@logic": [":arg2-of", "except-01", "e24"]},
+  {"@logic": ["patient", "person", "p24"]},
+  {"@logic": [":arg0-of", "butler-01", "b4"]},
+  {"@logic": ["instance", "hate-01", "h5"]},
+  {"@logic": ["agent", "butler", "b5"]},
+  {"@logic": ["patient", "everyone", "e5"]},
+  {"@logic": [":arg1-of", "have-degree-91", "h25"]},
+  {"@logic": [[":polarity", "-"], ["r", "rich"], ":arg25"]},
+  {"@logic": [[":arg3", ["m", "more"]], ["p", "person"], ":arg45"]},
+  {"@logic": ["instance", "hate-01", "h6"]},
+  {"@logic": ["agent", "butler", "b6"]},
+  {"@logic": ["patient", "everyone", "e6"]},
+  {"@logic": [":arg1-of", "hate-01", "h26"]},
+  {"@logic": ["agent", "person", "p6"]},
+  {"@logic": ["name", "aunt_agatha", "p6"]},
+  {"@logic": ["instance", "hate-01", "h7"]},
+  {"@logic": ["agent", "no-one", "n7"]},
+  {"@logic": ["patient", "everyone", "e7"]},
+  {"@logic": ["instance", "butler", "b8"]},
+  {"@logic": ["isa", "person", "p8"]},
+  {"@logic": ["name", "agatha", "p8"]}]
+prover output:
+ {"error": "no question given"}
+
+result: None
