@@ -41,8 +41,7 @@ Some cats are animals. - A
 
 
 
-Inglise keeles:
-Kõik konkreetsed asjad #the
+In English: All concrete objects have article `the` 
 
 
 catch-01 
@@ -56,6 +55,6 @@ Corpus:
 2. Abstract - Quasimodo
 3. Fact - ?https://github.com/dbpedia/fact-extractor
 
-Inglise keel: https://core.ac.uk/download/pdf/211329362.pdf
+@see similar senence classification based on Ilokano language: https://core.ac.uk/download/pdf/211329362.pdf
 
 @see also: https://arxiv.org/pdf/cmp-lg/9505034.pdf
