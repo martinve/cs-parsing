@@ -9,7 +9,12 @@ def fetch_parse_from_server(input_text):
     json_data = None
     try:
         start = time.time()
-        req = requests.get(f"{config.server_uri}/parse?p={input_text}")
+        # req = requests.get(f"{config.server_uri}/process?p={input_text}")
+
+        # POST: /parse passage = input_text
+        postdata = {"passage": input_text}
+        req = requests.post(f"{config.server_uri}/parse", postdata)
+
         json_data = req.json()
     except Exception as e:
         print("Cannot connect to parse server at: ", config.server_uri)

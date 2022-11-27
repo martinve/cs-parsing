@@ -5,3 +5,7 @@ stanza
 spacy_stanza
 unidecode
 git+https://github.com/hltcoe/PredPatt.git
+
+bottle
+bottle-sqlalchemy
+penman

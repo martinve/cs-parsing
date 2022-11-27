@@ -58,7 +58,7 @@ def post_import(db):
     data = json.loads(rawdata)
     fmtdata = pprint.pformat(data, indent=2)
 
-    last_id = db_persist_parse(db, data)
+    last_id = persist.db_persist_parse(db, data)
     redirect(f"/details/{last_id}")
 
 
@@ -120,6 +120,19 @@ def sentence_update_logic(sentence_id, db):
     snt = db.query(Sentence).get(sentence_id)
     persist.db_update_snt_logic(db, snt)
     return redirect(f"/sentences/{sentence_id}")
+
+
+@app.get("/process")
+def sentence_process():
+    global init_pipeline
+    passage = request.query.get("p")
+    result = None
+    if passage:
+        if init_pipeline == False:
+            unified_parser.init_pipeline()
+            init_pipeline = True
+        result = unified_parser.get_passage_analysis(passage)
+    return json.dumps(result)
 
 
 @app.get('/extract')

@@ -11,7 +11,20 @@ sys.path.append(parent)
 import api
 import tests.sentence_heuristic_classifier as clf
 
-ground_truth = 1
+
+snt_types = {
+    "concept": 1,
+    "fact": 2,
+    "sit": 3
+}
+
+sources = {
+    "openbook": 1,
+    "dbpedia": 2,
+    "socialiqa": 3
+}
+
+
 
 """
 Fact sentences:
@@ -20,8 +33,11 @@ Fact sentences:
 """
 
 
-def fetch_openbook_parse(filename, max_items=10):
-    f = open("openbook.txt")
+
+
+
+def fetch_corpus_parse(in_filename, out_filename, max_items=10):
+    f = open(in_filename)
     row = f.readline()
 
     sentences = []
@@ -32,21 +48,22 @@ def fetch_openbook_parse(filename, max_items=10):
 
         row = row.strip()
         row = row.strip('"')
-        row += "."
+        if row[-1] not in ["."]:
+            row += "."
         sentences.append(row)
 
     passage = " ".join(sentences[:max_items])
 
     start = time.time()
     passage_meta = api.fetch_parse_from_server(passage)
-    file = f'../data/{filename}.json'
+    file = f'../data/{out_filename}.json'
     with open(file, 'w') as f:
         json.dump(passage_meta, f, indent=2)
         print("Saved openbook meta.")
     print(f"Fetched parse for {k} sentences in {time.time() - start}")
 
 
-def validate_openbook_parse(filename):
+def validate_openbook_parse(filename, ground_truth=1):
     y_true = []
     y_pred = []
 
@@ -73,6 +90,7 @@ def validate_openbook_parse(filename):
             k += 1
 
     print("Total errored:", errored)
+    print("Total sentences", k - 1)
 
     # print(y_pred)
     # print(y_true)
@@ -81,7 +99,8 @@ def validate_openbook_parse(filename):
     print(metrics.classification_report(y_true, y_pred, zero_division=0))
 
 
-def perform_single_prediction(filename="validate_openbook", idx=1):
+def perform_single_prediction(name, ground_truth=1, idx=1):
+    filename = f"validate_{name}"
     file = f'../data/{filename}.json'
     with open(file) as infile:
         data = json.load(infile)
@@ -95,15 +114,47 @@ def perform_single_prediction(filename="validate_openbook", idx=1):
     print("Predict:", predict, clf.snt_type_label(predict))
 
 
+def prepare(kb_list):
+    for item in kb_list:
+        if item == "openbook":
+            print("Preparing OpenbookQA Data")
+            fetch_corpus_parse("openbook.txt", out_filename="validate_openbook", max_items=100)
+        if item  == "winograd":
+            print("Preparing Winograd Schema Data")
+            fetch_corpus_parse("winograd.txt", out_filename="validate_winograd", max_items=100)
+        if item == "dbpedia":
+            print("Preparing DBPedia Schema Data")
+            fetch_corpus_parse("dbpedia.txt", out_filename="validate_dbpedia", max_items=100)
+        if item == "socialiqa":
+            print("Preparing Social IQA Data")
+            fetch_corpus_parse("socialiqa.txt", out_filename="validate_socialiqa", max_items=100)
+
+
+
+def validate(name, gold_label):
+    filename = f"validate_{name}"
+    validate_openbook_parse(filename, gold_label)
+
+
 if __name__ == "__main__":
 
-    # fetch_openbook_parse(filename="validate_openbook", max_items=100)
+    # prepare(["dbpedia"])
 
+    # sources = ["openbook", "socialiqa", "dbpedia]
+    name = None
     if len(sys.argv) > 1:
-        idx = int(sys.argv[1])
-        perform_single_prediction(filename="validate_openbook", idx=idx)
-    else:
-        validate_openbook_parse(filename="validate_openbook")
+        name = sys.argv[1]
+    if name not in sources.keys():
+        name = list(sources.keys())[0]
 
-    # Sent 3 : False 3 An example of a change in the Earth is an ocean becoming a wooded area.
-    #
+
+    truth = sources[name]
+
+    if len(sys.argv) > 2:
+        idx = int(sys.argv[2])
+        perform_single_prediction(name, truth, idx=idx)
+    else:
+        validate(name, truth)
+
+
+

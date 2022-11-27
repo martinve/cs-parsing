@@ -86,11 +86,11 @@ def get_snt_type_probabilities(snt_ud, explain=False):
     ner = get_ner(snt_ud)
 
     if ner:
-        if explain: print(f"Clf: NER (sit + 10;fact +11)")
+        if explain: print(f"CLF: NER (sit + 10;fact +11)")
         predict["sit"] += 10
         predict["fact"] += 11
     else:
-        if explain: print(f"Clf: No NER (fact -5, concept +10)")
+        if explain: print(f"CLF: No NER (fact -5, concept +10)")
         predict["fact"] -= 5
         predict["concept"] += 10
 
@@ -98,37 +98,54 @@ def get_snt_type_probabilities(snt_ud, explain=False):
     indef_article_count = 0
     for art in get_articles(snt_ud):
         if art["lemma"] == "a":
-            if explain: print(f"Clf: Indefinite article (concept +10)")
+            if explain: print(f"CLF: Indefinite article (concept +10)")
             predict["concept"] += 10
             indef_article_count += 1
             continue
         if art["lemma"] == "the" and def_article_count == 0:
-            if explain: print(f"Clf: Definite article (concept -10)")
+            if explain: print(f"CLF: Definite article (concept -10)")
             predict["concept"] -= 5
             def_article_count += 1
             continue
 
     if def_article_count == 0 and indef_article_count == 0:
-        if explain: print(f"Clf: No definite article (concept +10)")
+        if explain: print(f"CLF: No definite article (concept +10)")
         predict["concept"] += 10
 
     verbs = get_upos(snt_ud, "VERB")
+    remaining_verbs = verbs.copy()
     if verbs:
         if "have" in verbs:
-            if explain: print(f"Clf: 'have' in verbs (fact +10)")
+            if explain: print(f"CLF: 'have' in verbs (fact +10)")
             predict["fact"] += 10
+            remaining_verbs.remove("have")
+
+            if len(remaining_verbs) > 1:
+                if explain: print(f"CLF: not 'have' in verbs (sit +11)")
+                predict["sit"] += 10 * (1.1 * len(remaining_verbs))
+
         elif "cause" in verbs:
-            if explain: print(f"Clf: 'cause' in verbs (sit -10)")
+            if explain: print(f"CLF: 'cause' in verbs (sit -10)")
             predict["sit"] -= 10
         else:
-            if explain: print(f"Clf: not 'have' in verbs (sit +10)")
-            predict["sit"] += 10
+            if explain: print(f"CLF: not 'have' in verbs (sit +11)")
+            predict["sit"] += 11 * (1.1 * len(remaining_verbs))
 
-    aux = get_upos(snt_ud, "AUX")
-    if aux:
-        if "be" in aux:
-            if explain: print(f"Clf: `be` in AUX (fact +10; concept +10)")
-            predict["fact"] += 10
+
+    nouns = get_upos(snt_ud, "NOUN")
+    if "example" in nouns:
+        if explain: print(f"CLF: Example in nouns (concept +10)")
+        predict["concept"] += 10
+
+    # if remaining_verbs != verbs:
+    # print("Remaining VB", remaining_verbs)
+    # print("Verbs", verbs)
+
+    auxverbs = get_upos(snt_ud, "AUX")
+    if auxverbs:
+        if "be" in auxverbs:
+            if explain: print(f"CLF: `be` in AUX (fact +10; concept +10)")
+            predict["fact"] += 11
             predict["concept"] += 10
 
     predict["confidence"] = get_prediction_confidence(predict)

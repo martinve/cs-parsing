@@ -240,7 +240,6 @@ def get_simplified_logic(amr_str):
     for s, v, o in g.edges():
         if s == o:
             continue
-        print(s, v, o)
         rel = [replace_role(v), s, assign_value(o, attrs)]
         rels.append(rel)
 
