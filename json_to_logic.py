@@ -253,10 +253,9 @@ def simplify_clauses(clause_lst):
 """
 
 
-def question_from_amr(amr_str, udparse, constituency=False, debug=False):
+def question_from_amr(amr_str, udparse, debug=False):
     data = {
         "amr": amr_str,
-        "const": constituency,
         "ud": udparse
     }
     pprint.pprint(data, indent=2)

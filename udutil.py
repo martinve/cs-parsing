@@ -5,6 +5,15 @@ Utilities for extracting informatin from Universal Dependencies
 """
 
 
+def get_verbs(snt_ud):
+    entities = []
+    for tok in snt_ud:
+        if tok["upos"] != "VERB":
+            continue
+        entities.append(tok["lemma"])
+    return entities
+
+
 def get_named_entities(snt_ud):
     """
     Get a list of named entities via token BIOES representation
@@ -19,6 +28,7 @@ def get_named_entities(snt_ud):
     name_lst = []
 
     for tok in snt_ud:
+        if isinstance(tok, list): tok = tok[0]
         if tok["ner"] == "O":
             continue
 
@@ -46,6 +56,7 @@ def get_named_entities(snt_ud):
 def get_word_by_keyval(sentence, key, val):
     if not sentence: return None
     for word in sentence:
+        if isinstance(word, list): word = word[0]
         if word[key] == val:
             return word
     return None
@@ -108,7 +119,7 @@ def nice_word_strrep(word, feats=False):
     # s += " text:" + word["text"]
 
     s += " upos:" + word["upos"]
-    s += " xpos:" + word["xpos"]
+    # s += " xpos:" + word["xpos"]
     s += " lemma:" + word["lemma"]
     if word["ner"] != "O":
         s += " ner:" + word["ner"]
@@ -145,8 +156,7 @@ def print_plain(snt_ud):
         "lemma": "Lemma",
         "ner": "NER",
         "text": "Text",
-        "upos": "upos",
-        "xpos": "xpos"
+        "upos": "upos"
     }
 
     print(tabulate(snt_ud, headers=headers, tablefmt="grid"), 1 * "\n")
@@ -162,6 +172,7 @@ def extract_tree(sentence, rootid=0, spaces="", printedids=[], feats=False):
     # print("sentence:",sentence)
     printedids = printedids[::-1]  # copy
     for word in sentence:
+        print(word)
         if word["head"] == rootid:
             deprel = word["deprel"]
             if deprel == "punct": continue

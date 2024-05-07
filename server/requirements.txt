@@ -1,0 +1,11 @@
+bottle
+bottle-cork
+amrlib
+textacy
+benepar
+stanza
+spacy_stanza
+unidecode
+bottle-sqlalchemy
+penman
+protobuf==3.20.*

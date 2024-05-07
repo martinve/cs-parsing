@@ -24,7 +24,11 @@ warnings.filterwarnings('ignore')
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
 dirname = os.path.dirname(__file__)
+
+# model_stog_dir = os.path.join(dirname, "models/model_parse_xfm_bart_base-v0_1_0")
 model_stog_dir = os.path.join(dirname, "models/model_stog")
+
+model_gtos_dir = os.path.join(dirname, "models/model_gtos")
 
 stanza_nlp = None
 nlp = None
@@ -37,7 +41,8 @@ def init_pipeline():
 
     debug_print("Initializing model pipeline.")
 
-    stog = amrlib.load_stog_model(model_dir=model_stog_dir)
+    amrlib.load_stog_model(model_dir=model_stog_dir)
+    # gtos = amrlib.load_gtos_model(model_dir=model_gtos_dir)
     amrlib.setup_spacy_extension()
 
     nlp = spacy_stanza.load_pipeline("en", processors='tokenize,ner,pos,lemma,constituency,depparse')
@@ -48,6 +53,10 @@ def init_pipeline():
 
 def udparse(text):
     start = time.time()
+
+    if stanza_nlp is None:
+        init_pipeline()
+
     doc = stanza_nlp(text)
     docpy = doc.to_dict()
     debug_print("[Parse 1] UD in:", time.time() - start)
@@ -227,6 +236,10 @@ def get_amr_parse(sent):
 
 def get_passage_analysis(passage: str, context=False):
     st0 = time.time()
+
+    if nlp is None:
+        init_pipeline()
+
     doc = textacy.make_spacy_doc(passage, lang=nlp)
     debug_print("textacy.make_spacy_doc in:", time.time() - st0)
 

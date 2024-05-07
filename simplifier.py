@@ -1,7 +1,7 @@
 import sys
 
 from logger import logger
-from tests.sentence_heuristic_classifier import snt_type_label
+from classifier.sentence_heuristic_classifier import snt_type_label
 
 
 def simplify(clauses, snt_type):

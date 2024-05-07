@@ -1,19 +1,30 @@
 import pickle
 from bottle import redirect
-from models import Experiment, Sentence
+
+from models import Passage, Sentence
+import os, sys
+
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
+
 import amrutil
+import amr_clausifier # TODO: Replace amrutil with this when ready
 import logicconvert
+
+
 
 
 def db_persist_parse(db, data):
     passage = data["passage"]
     p2 = passage
 
-    exists = db.query(Experiment).filter(Experiment.passage == passage).first()
-    if 1 == 0 and exists:
+    exists = db.query(Passage).filter(Passage.passage == passage).first()
+    if exists:
+        # TODO: Add it to paassage
         redirect("/")  # Passage already exists
 
-    exp = Experiment()
+    exp = Passage()
     exp.passage = passage
     exp.rawdata = pickle.dumps(data)
     exp.context = ""
@@ -57,10 +68,37 @@ def db_update_snt_logic(db, snt):
             "ud": pickle.loads(snt.parse_ud)
         }
     }
-    logic, context = logicconvert.get_sentnence_clauses(sntobj, 0, ud_shift=True, debug=False, json_ld_logic=False)
-    simpl_logic = amrutil.get_simplified_logic(snt.parse_amr)
+
+    res = logicconvert.get_sentence_clauses(sntobj, 0, ud_shift=True, debug=False, json_ld_logic=False)
+    if not res:
+        return
+    (logic, context) = res
+
+    # simpl_logic = amrutil.get_simplified_logic(snt.parse_amr)
+
+    simpl_logic = ""
+    try:
+        simpl_logic = amr_clausifier.extract_clauses(snt.parse_amr)
+    except:
+        siml_logic = "ERROR"
 
     snt.logic = pickle.dumps(logic)
     snt.context = pickle.dumps(context)
     snt.simpl_logic = pickle.dumps(simpl_logic)
     db.commit()
+
+    return logic, simpl_logic, context
+
+
+def recreate_data(db):
+    Base.metadata.drop_all(engine)
+    Base.metadata.create_all(engine)
+
+    for file in os.listdir(cnf.datadir):
+        if file.endswith(".json"):
+            with open(cnf.datadir + file) as f:
+                data = json.loads(f.read())
+                persist.db_persist_parse(db, data)
+
+    redirect("/")
+

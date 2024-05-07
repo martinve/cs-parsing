@@ -4,8 +4,8 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 Base = declarative_base()
 
 
-class Experiment(Base):
-    __tablename__ = "experiments"
+class Passage(Base):
+    __tablename__ = "passages"
 
     id = Column(Integer, primary_key=True)
     passage = Column(String)
@@ -15,14 +15,14 @@ class Experiment(Base):
     sentences = relationship("Sentence")
 
     def __repr__(self):
-        return f"<Sentence id={self.id} text={self.passage}>"
+        return f"<Passage id={self.id} text={self.passage}>"
 
 
 class Sentence(Base):
     __tablename__ = "sentences"
 
     id = Column(Integer, primary_key=True)
-    experiment_id = Column(Integer, ForeignKey("experiments.id"))
+    passage_id = Column(Integer, ForeignKey("passages.id"))
     text = Column(String)
     parse_amr = Column(String)
     parse_ud = Column(String)
@@ -31,7 +31,7 @@ class Sentence(Base):
     logic = Column(String)
     simpl_logic = Column(String)
 
-    experiment = relationship("Experiment", back_populates="sentences")
+    experiment = relationship("Passage", back_populates="sentences")
 
     def __repr__(self):
-        return f"<Sentence id={self.id} experiment_id={self.experiment_id} text={self.text} logic={self.logic}>"
+        return f"<Sentence id={self.id} passage_id={self.passage_id} text={self.text} logic={self.logic}>"

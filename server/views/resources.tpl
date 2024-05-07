@@ -24,7 +24,9 @@
     <li>
         <a href="http://propbank.github.io/v3.4.0/frames/">Propbank Frames</a>
     </li>
-
+    <li>
+        <a href="https://github.com/propbank/propbank-documentation/blob/master/annotation-guidelines/Propbank-Annotation-Guidelines.pdf">Propbank Annotation Guidelines</a>
+    </li>
 </ol>
 
 

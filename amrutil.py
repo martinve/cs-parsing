@@ -5,7 +5,7 @@ import penman
 
 import udutil
 import config
-
+from logger import logger
 
 def format_amr(amr_graph):
     ret = []
@@ -26,9 +26,14 @@ def get_root(amr_graph):
     root_instance = amr_graph[0][1].split("-", 1)[0]
     # print(amr_graph[0][1], "->", root_instance)
     root_word = udutil.get_word(config.snt_ud, root_instance)
+    pb_form = amr_graph[0][1].replace("-", ".")
     if root_word:
-        return {"upos": root_word["upos"], "lemma": root_word["lemma"]}
-    return None
+        return {
+            "upos": root_word["upos"],
+            "lemma": root_word["lemma"],
+            "pbverb": pb_form
+        }
+    return {"upos": "", "lemma": "", "pbverb": ""}
 
 
 def check_edge(edge, parent):
@@ -188,6 +193,7 @@ def parse_logic_list_(json_list, depth=0, parse=[]):
 
 
 def replace_role(rel):
+    print("Rel:", rel)
     rel_replace_dict = {
         ":domain": "isa",
         ":name": "hasName",
@@ -208,8 +214,36 @@ def assign_value(o, attrs):
     return o
 
 
+def amr_extract_concepts(g, polarity):
+    concepts = []
+    for s, v, o in g.instances():
+        if o not in ["name"]:
+            for p in polarity:
+                if p[0] == s:
+                    o = "-" + o
+            concepts.append([o, s])
+    return concepts
+
+
+
+def amr_extract_relations(g, attrs):
+    rels = []
+    for s, v, o in g.edges():
+        if s == o:
+            continue
+        rel = [replace_role(v), s, assign_value(o, attrs)]
+        rels.append(rel)
+    return rels
+
+
 def get_simplified_logic(amr_str):
-    g = penman.decode(amr_str)
+    try:
+        # Decode AMR to Graph object
+        g = penman.decode(amr_str)
+    except:
+        logger.error("Cannot decode logic")
+        return []
+
 
     attrs = {}
     polarity = []
@@ -228,20 +262,10 @@ def get_simplified_logic(amr_str):
         if isinstance(attrs[a], list):
             attrs[a] = "_".join(attrs[a])
 
-    concepts = []
-    for s, v, o in g.instances():
-        if o not in ["name"]:
-            for p in polarity:
-                if p[0] == s:
-                    o = "-" + o
-            concepts.append([o, s])
+    concepts = amr_extract_concepts(g, polarity)
+    relations = amr_extract_relations(g, attrs)
 
-    rels = []
-    for s, v, o in g.edges():
-        if s == o:
-            continue
-        rel = [replace_role(v), s, assign_value(o, attrs)]
-        rels.append(rel)
 
-    logic = concepts + rels
+
+    logic = concepts + relations
     return logic

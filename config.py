@@ -35,5 +35,41 @@ amr_dict = {
     ":poss": "belongs", # "belongsTo",
     ":location": "located", # "isLocatedAt",
     "have-org-role-91": "role", # "hasRole"
-    ":instrument": "with"
+    "have-rel-role-91": "role",
+    ":name": "hasName",
+    ":instrument": "instrument",
+    ":quant": "$count"
 }
+
+# source: https://www.isi.edu/~ulf/amr/lib/amr-dict.html
+# Roles: https://github.com/amrisi/amr-guidelines/blob/master/amr.md#special-frames-for-roles
+amr_dict_roles = {
+    'have-rel-role-91': {
+        'roles': {
+            ':ARG0': 'entityA',
+            ':ARG1': 'entityB',
+            ':ARG2': 'entityA_role',
+            ':ARG3': 'entityB_role',
+            ':ARG4': 'Basis'  # relationship basis (contract, case; rarely used)
+        }
+    },
+    'have-org-role-91': {
+        'roles': {
+            ':ARG0': "Agent",
+            ':ARG1': 'Organization',
+            ':ARG2': 'Role',
+            ':ARG4': 'Responsibility'
+        }
+    },
+    "have-degree-91": { # https://www.isi.edu/~ulf/amr/ontonotes-4.0-frames/have-degree-v.html
+        "roles": {
+            ":ARG0": "Entity",
+            ":ARG1": "Attribute",
+            ":ARG2": "Degree",
+            ":ARG3": "Compared-to",
+            ":ARG4": "Superlative",
+            ":ARG5": "Reference"
+        }
+    }
+}
+

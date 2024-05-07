@@ -1,8 +1,10 @@
 from nltk.corpus import wordnet as wn
 import argparse
+import sys
 
-
-yago_prefix = "10"
+# We use this to translate between different datasets. For instance
+# if we use Yago, 10 is added to all ids.
+syn_prefix = "10"
 
 
 def print_syn(syn, prefix = ' '):
@@ -56,7 +58,7 @@ def get_name(syn):
     return syn.lemmas()[0].name()
 
 def get_id(syn):
-    return yago_prefix +  str(syn.offset())
+    return syn_prefix +  str(syn.offset())
 
 
 if __name__ == '__main__':

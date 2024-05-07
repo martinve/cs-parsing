@@ -2,14 +2,18 @@ import sys
 
 import config
 
-
 class RoleReplacer:
 
     def __init__(self):
         self.role_dict = config.role_dict
         self.amr_dict = config.amr_dict
 
+
+    def update_role_dict(self, role_dict):
+        self,role_dict = role_dict
+
     def replace(self, clauses, context):
+        print(clauses)
         assert(type(context) == dict)
 
         snt_type = context["type"]

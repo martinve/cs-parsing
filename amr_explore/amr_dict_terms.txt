@@ -1,0 +1,260 @@
+a
+abbreviation
+about
+:accompanier
+according to
+address
+adverb
+:age
+ago
+aircraft vs. aircraft-type (NE type)
+all
+alternate form
+amr-choice
+amr-empty
+amr-unintelligible
+amr-unknown
+and
+angle-quantity
+anti-
+anyway
+approximately
+argument raising
+article
+as
+as ... as
+at
+be
+:beneficiary
+between
+binding-affinity-91
+bio appendix
+but
+byn
+byline-91
+:calendar
+can
+:cause
+child
+citation
+comparative
+:compared-to
+compass direction
+:concession
+:condition
+confidence interval
+:consist-of
+contrast-01
+copula
+correlate-91
+:cost
+could
+cycles
+date-entity
+date-interval
+:degree
+degrees
+:destination
+direct speech
+:direction
+disfluency
+disputed and tricky GPEs
+distribution-range-91
+:domain
+downtoner
+:duration
+early
+east
+else
+email
+emoticon
+:employed-by
+:era
+ex
+:example
+exclamation
+:extent
+figure
+for
+former
+fraction
+:frequency
+from
+guidelines
+happen
+have
+have-degree-91
+have-degree-of-resemblance-91
+have-org-role-91
+have-quant-91
+have-rel-role-91
+how
+however
+hyperlink-91
+if
+imperative
+implied argument
+implied relation
+in
+include-91
+inference
+instead-of-91
+:instrument
+intensifier
+interjection
+language
+last
+late
+less
+:li
+light verb construction
+link
+list item
+:location
+-ly
+:manner
+mathematical operator
+may
+May
+:meaning
+:medium
+might
+:mod
+modal adverbs and adjectives
+modal verbs
+:mode
+more
+more like ... than ...
+most
+multiple choice question
+multi-sentence
+must
+:name
+named entity
+negation
+next
+no
+nominal relative clause
+north
+occur
+of
+on
+once
+or
+:ord
+ordinal
+otherwise
+over
+own
+:part
+partner
+past
+:path
+per
+percent
+pertainym
+phone-number-entity
+phrasal verbs
+please
+plural
+:polarity
+:polite
+political-movement
+political-party
+:poss
+pragmatics
+predicates
+preposition
+product-of
+pronoun
+publication-91
+punctuation
+:purpose
+:quant
+quantifiers and scope
+quantity
+question
+raising
+rate-entity-91
+rather
+ratio-of
+really
+reason
+reflexive pronouns
+regardless-91
+reification
+relative clause
+relative-position
+request-confirmation-91
+respectively
+role
+'s
+say-01
+:scale
+score
+shall
+shortcuts
+should
+so
+:source
+south
+spelling standard
+street-address-91
+string-entity
+:subevent
+:subset
+suffix
+sum-of
+superlative
+:superset
+support verbs
+table
+tag question
+take place
+tense
+that
+the
+the X-er the Y-er
+therefore
+through
+:time
+times
+:timezone
+to
+too
+:topic
+transferred negation
+truth-value
+typo
+unless
+url-entity
+:value
+value-interval
+videos
+visualization
+vocative
+void frames
+vulgarity
+west
+when
+whether
+while
+wh-question
+:wiki
+will
+with
+within
+without
+would
+yes
+yes-no question
+!
+"
+$
+%
+(
+-
+:
+?
+@
+±

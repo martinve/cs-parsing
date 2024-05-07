@@ -1,0 +1,17 @@
+binding-affinity-91
+byline-91
+correlate-91
+distribution-range-91
+have-degree-91
+have-degree-of-resemblance-91
+have-org-role-91
+have-quant-91
+have-rel-role-91
+hyperlink-91
+include-91
+instead-of-91
+publication-91
+rate-entity-91
+regardless-91
+request-confirmation-91
+street-address-91

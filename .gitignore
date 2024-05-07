@@ -5,3 +5,10 @@ server/models
 data/*.json
 __pycache__
 client
+/doc/
+/deprecated/
+/debug/
+/amr_explore/
+/cahce/
+/tests/
+/validation/

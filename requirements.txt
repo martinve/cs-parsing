@@ -1,0 +1,9 @@
+amrlib
+textacy
+benepar
+stanza
+spacy_stanza
+unidecode
+bottle
+bottle-sqlalchemy
+penman

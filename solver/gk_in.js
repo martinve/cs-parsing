@@ -1,4 +1,3 @@
-[ {"@logic": ["rootvar", "source-02", "s0"]},
-  {"@logic": ["agent", "candle", "c0"]},
-  {"@logic": ["patient", "light", "l0"]},
-  {"@logic": [":time", "burn-01", "b0"]}]
+[ {"@logic": ["rootvar", "red-02", "r0"]},
+  {"@logic": ["patient", "elephant", "e0"]},
+  {"@logic": ["property", "all", "a0"]}]

@@ -10,7 +10,7 @@
 
 <div class="my-4">
     <a href="/passage/{{sentence.experiment.id}}">Passage</a>
-    <a href="/sentence/{{sentence.id}}/logic">Update Logic</a>
+    <a href="/sentences/{{sentence.id}}/logic">Update Logic</a>
 </div>
 
 
@@ -28,12 +28,16 @@
 <div class="row">
     <div class="col">
         <h3>Logic</h3>
-        <code>{{ formatter.format_logic(sentence.logic) }}</code>
 
-        <h4>Alternative
-        :</h4>
-        <code class="mt-4">{{ formatter.format_logic(sentence.simpl_logic) }}</code>
+        <!--
 
+        -->
+        <code>{{ formatter.format_logic(sentence.simpl_logic) }}</code>
+
+        <!--
+        <h4>Previous approach</h4>
+        <code class="mt-4">{{ formatter.format_logic(sentence.logic) }}</code>
+        -->
     </div>
     <div class="col">
         <h3>Context</h3>

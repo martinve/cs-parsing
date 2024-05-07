@@ -21,7 +21,7 @@ import json_to_logic as json2logic
 from logger import logger
 from solver import run_solver
 
-import tests.sentence_heuristic_classifier as snt_clf
+import classifier.sentence_heuristic_classifier as snt_clf
 
 import udutil
 import simplifier
@@ -35,7 +35,9 @@ def is_question(snt):
     return snt.endswith("?")
 
 
-def get_sentnence_clauses(sent, idx, debug=False, ud_shift=False, json_ld_logic=True):
+def get_sentence_clauses(sent, idx, debug=True, ud_shift=False, json_ld_logic=True):
+
+
     amr = sent["semparse"]["amr"]
     ud = sent["semparse"]["ud"]
     # const = sent["constituency"]
@@ -57,7 +59,9 @@ def get_sentnence_clauses(sent, idx, debug=False, ud_shift=False, json_ld_logic=
 
     if len(json_list) == 0:
         logger.error("Error translating sentence to JSON.")
-        sys.exit(-1)
+        print(sent["sentence"])
+        return None, None
+        # sys.exit(-1)
 
     # cl2 = amrutil.parse_logic_list(json_list)
     # print(f"\nCLAUSES2:\n{pprint.pformat(cl2, compact=True)}")
@@ -65,23 +69,40 @@ def get_sentnence_clauses(sent, idx, debug=False, ud_shift=False, json_ld_logic=
     snt_type = snt_clf.predict_snt_type(ud, debug)
     question = is_question(sent['sentence'])
 
+    ud_root = udutil.get_root(ud)
+    amr_root = amrutil.get_root(json_list)
+
     cur_context = {
         "idx": idx,
         "type": snt_clf.snt_type_label(snt_type),
         "question": question,
         "entities": udutil.get_named_entities(ud),
-        "ud_root": udutil.get_root(ud),
-        "amr_root": amrutil.get_root(json_list)
+        "verbs": udutil.get_verbs(ud),
+        "ud_root": ud_root,
+        "amr_root": amr_root
     }
+
+    # assert(amr_root is not None)
+
+    if ud_root["lemma"] != amr_root["lemma"] or ud_root["upos"] != amr_root["upos"]:
+      cur_context["root_mismatch"] = True
 
     assert (type(cur_context) == dict)
 
-    print(f"AMR:\n{amr}")
+    if debug:
+        print(f"AMR:\n{amr}")
 
     clauses = json2logic.from_amr(json_list, debug=False)
 
+    import server.propbank_api as pb
+    pb.describe(amr_root["pbverb"])
+
+    # role_replacer.update_role_dict(role_dict)
+
     clauses = role_replacer.replace(clauses, cur_context)
-    print(f"\nInitial Clauses ({len(clauses)}):\n{pprint.pformat(clauses, compact=True)}")
+
+    if debug:
+        print(f"\nInitial Clauses ({len(clauses)}):\n{pprint.pformat(clauses, compact=True)}")
 
     simpl_clauses = simplifier.simplify(clauses, snt_type)
     if simpl_clauses:
@@ -101,8 +122,11 @@ def get_sentnence_clauses(sent, idx, debug=False, ud_shift=False, json_ld_logic=
                 clauses[k] = cl
         return clauses, cur_context
     else:
+        # TODO: Parse question
+        # TODO: Add to context
         logger.error(f"Question: {clauses}")
         question = json2logic.question_from_amr(amr, ud)
+        return question, cur_context
 
 
 def main(passage_raw, limit=False, debug=False):
@@ -118,7 +142,7 @@ def main(passage_raw, limit=False, debug=False):
     context = []
 
     for idx, sent in enumerate(passage_raw['sentences']):
-        clauses, snt_ctx = get_sentnence_clauses(sent, idx, debug=False, ud_shift=True)
+        clauses, snt_ctx = get_sentence_clauses(sent, idx, debug=False, ud_shift=True)
         logic.extend(clauses)
         context.append(snt_ctx)
 
