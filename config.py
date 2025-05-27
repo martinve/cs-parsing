@@ -2,7 +2,7 @@ debug_print_flag = False
 debug_graph_construction = False
 debug_clauses = False
 
-server_port = 9002
+server_port = 10001
 server_host = "localhost"
 server_uri = f"http://{server_host}:{server_port}"
 cache_file = "parser_cache"
