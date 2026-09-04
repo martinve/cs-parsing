@@ -11,7 +11,7 @@ from logger import logger
 
 import stanza
 import benepar
-import spacy_stanza
+import spacy
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
@@ -45,7 +45,7 @@ def init_pipeline():
     # gtos = amrlib.load_gtos_model(model_dir=model_gtos_dir)
     amrlib.setup_spacy_extension()
 
-    nlp = spacy_stanza.load_pipeline("en", processors='tokenize,ner,pos,lemma,constituency,depparse')
+    nlp = spacy.load("en_core_web_sm")
     nlp.add_pipe('benepar', config={'model': 'benepar_en3'})
     stanza_nlp = stanza.Pipeline(lang='en', processors='tokenize,ner,pos,lemma,constituency,depparse')
 
@@ -63,30 +63,60 @@ def udparse(text):
     return docpy
 
 
-def get_word_types(sent):
-    """
-    :type sent: spacy.tokens.span.Span
-    """
+def get_ud_tokens(sent_ud):
+    if not sent_ud:
+        return []
+    return sent_ud[0]
 
+
+def get_word_types(sent_ud):
     wordtypes = {}
-    for token in sent:
-        if token.pos_ in ["DET", "PUNCT"]:
+    for token in get_ud_tokens(sent_ud):
+        pos = token["upos"]
+        if pos in ["DET", "PUNCT"]:
             continue
-        if token.pos_ not in wordtypes.keys():
-            wordtypes[token.pos_] = []
-        wordtypes[token.pos_].append(token.text)
+        if pos not in wordtypes.keys():
+            wordtypes[pos] = []
+        wordtypes[pos].append(token["text"])
     return wordtypes
 
 
-def get_named_entities(sent):
-    """
-    :type sent: spacy.tokens.span.Span
-    """
+def get_named_entities(sent_ud):
     ner = {}
-    for ent in sent.ents:
-        if ent.label_ not in ner.keys():
-            ner[ent.label_] = []
-        ner[ent.label_].append(ent.text)
+    current_label = None
+    current_tokens = []
+
+    def flush_entity():
+        nonlocal current_label, current_tokens
+        if current_label and current_tokens:
+            if current_label not in ner.keys():
+                ner[current_label] = []
+            ner[current_label].append(" ".join(current_tokens))
+        current_label = None
+        current_tokens = []
+
+    for token in get_ud_tokens(sent_ud):
+        token_ner = token.get("ner") or "O"
+        if token_ner == "O":
+            flush_entity()
+            continue
+
+        prefix, label = token_ner.split("-", 1)
+        if prefix == "S":
+            flush_entity()
+            ner.setdefault(label, []).append(token["text"])
+        elif prefix == "B":
+            flush_entity()
+            current_label = label
+            current_tokens = [token["text"]]
+        elif prefix in ["I", "E"] and current_label == label:
+            current_tokens.append(token["text"])
+            if prefix == "E":
+                flush_entity()
+        else:
+            flush_entity()
+
+    flush_entity()
     return ner
 
 
@@ -122,13 +152,26 @@ def get_wordnet_hierarchy(sent):
     return wordnet
 
 
-def get_noun_phrases(sent):
-    """
-    :type sent: spacy.tokens.span.Span
-    """
+def get_noun_phrases(sent_ud):
     chunks = []
-    for np in sent.noun_chunks:
-        chunks.append(np.text)
+    tokens = get_ud_tokens(sent_ud)
+    token_by_id = {token["id"]: token for token in tokens}
+    nominal_pos = {"NOUN", "PROPN", "PRON"}
+    modifier_deps = {"det", "amod", "compound", "flat", "fixed", "nummod", "nmod:poss"}
+
+    for token in tokens:
+        if token["upos"] not in nominal_pos:
+            continue
+
+        phrase_token_ids = [token["id"]]
+        phrase_token_ids.extend(
+            child["id"]
+            for child in tokens
+            if child.get("head") == token["id"] and child.get("deprel") in modifier_deps
+        )
+        phrase = " ".join(token_by_id[token_id]["text"] for token_id in sorted(phrase_token_ids))
+        chunks.append(phrase)
+
     return chunks
 
 
@@ -139,17 +182,24 @@ def get_constituency(sent):
     return constituency
 
 
-def get_verb_phrases(sent):
+def get_verb_phrases(sent_ud):
     chunks = []
-    pattern = r'<VERB>?<ADV>*<VERB>+'
+    tokens = get_ud_tokens(sent_ud)
+    token_by_id = {token["id"]: token for token in tokens}
+    modifier_deps = {"aux", "advmod", "compound:prt"}
 
-    pattern = [{'POS': 'VERB', 'OP': '?'},
-               {'POS': 'ADV', 'OP': '*'},
-               {'POS': 'VERB', 'OP': '+'}]
+    for token in tokens:
+        if token["upos"] != "VERB":
+            continue
 
-    lists = textacy.extract.token_matches(sent, pattern)
-    for chunk in lists:
-        chunks.append(chunk.text)
+        phrase_token_ids = [token["id"]]
+        phrase_token_ids.extend(
+            child["id"]
+            for child in tokens
+            if child.get("head") == token["id"] and child.get("deprel") in modifier_deps
+        )
+        phrase = " ".join(token_by_id[token_id]["text"] for token_id in sorted(phrase_token_ids))
+        chunks.append(phrase)
     return chunks
 
 
@@ -207,12 +257,12 @@ def get_sentence_analysis(sent: object):
 
     parsed: dict[str, object] = {
         "sentence": sent.text,
-        "wordtypes": get_word_types(sent),
-        "ner": get_named_entities(sent),
+        "wordtypes": get_word_types(sent_ud),
+        "ner": get_named_entities(sent_ud),
         # "wordnet": get_wordnet_hierarchy(sent),
         "syntaxparse": {
-            "verbphrase": get_verb_phrases(sent),
-            "nounphrase": get_noun_phrases(sent)
+            "verbphrase": get_verb_phrases(sent_ud),
+            "nounphrase": get_noun_phrases(sent_ud)
         },
         "semparse": {
             "amr": get_amr_parse(sent),
@@ -226,9 +276,18 @@ def get_sentence_analysis(sent: object):
     return parsed
 
 
+def get_amr_sentence(sent):
+    text = sent.text.strip()
+    if not text or text[-1] in ".!?":
+        return sent
+
+    doc = nlp(text + ".")
+    return next(doc.sents)
+
+
 def get_amr_parse(sent):
     start = time.time()
-    parse = sent._.to_amr()[0]
+    parse = get_amr_sentence(sent)._.to_amr()[0]
     if debug:
         debug_print("[Parse 0] AMR in:", time.time() - start)
     return parse

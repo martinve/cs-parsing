@@ -1,19 +1,23 @@
 import bottle
 from bottle import run, error, static_file
-from bottle.ext import sqlalchemy
+import bottle_sqlalchemy as sqlalchemy
+import os
 from sqlalchemy import create_engine
 
 import persist
 import settings as cnf
 from models import Base
 
+db_directory = os.path.dirname(cnf.dbfile)
+if db_directory:
+    os.makedirs(db_directory, exist_ok=True)
 engine = create_engine(f"sqlite:///{cnf.dbfile}")
 
 app = bottle.Bottle()
 plugin = sqlalchemy.Plugin(engine, Base.metadata, keyword="db", create=True, commit=True)
 app.install(plugin)
 
-import static_controller
+# import static_controller
 import parse_controller
 import import_controller
 import sentence_controller
@@ -49,7 +53,7 @@ def setup_routing(app):
     app.route("/passage/:id/delete", "GET", passage_controller.delete)
 
     app.route("/test", "GET", passage_controller.test_logic)
-    app.route("/resources", "GET", static_controller.resources)
+    # app.route("/resources", "GET", static_controller.resources)
 
     app.route("/sentences", "GET", sentence_controller.index)
     app.route("/sentences/:id", "GET", sentence_controller.get_sentence)

@@ -1,11 +1,13 @@
-bottle
+bottle==0.12.25
 bottle-cork
-amrlib
-textacy
-benepar
-stanza
-spacy_stanza
-unidecode
-bottle-sqlalchemy
-penman
+bottle-sqlalchemy==0.4.3
+amrlib==0.8.1
+textacy==0.13.0
+benepar==0.2.0
+spacy==3.8.7
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl#sha256=1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85
+stanza==1.14.0
+torch==2.6.0
+unidecode==1.4.0
+penman==1.2.2
 protobuf==3.20.*
