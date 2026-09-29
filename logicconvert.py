@@ -9,6 +9,8 @@ import os
 import sys
 import pprint
 import argparse
+from pathlib import Path
+import platform
 
 import amrutil
 import api
@@ -36,7 +38,6 @@ def is_question(snt):
 
 
 def get_sentence_clauses(sent, idx, debug=True, ud_shift=False, json_ld_logic=True):
-
 
     amr = sent["semparse"]["amr"]
     ud = sent["semparse"]["ud"]
@@ -66,8 +67,10 @@ def get_sentence_clauses(sent, idx, debug=True, ud_shift=False, json_ld_logic=Tr
     # cl2 = amrutil.parse_logic_list(json_list)
     # print(f"\nCLAUSES2:\n{pprint.pformat(cl2, compact=True)}")
 
-    snt_type = snt_clf.predict_snt_type(ud, debug)
+    snt_type = snt_clf.predict_snt_type(ud, explain=False)
     question = is_question(sent['sentence'])
+
+    print("Snt type: ", snt_type)
 
     ud_root = udutil.get_root(ud)
     amr_root = amrutil.get_root(json_list)
@@ -156,12 +159,17 @@ def main(passage_raw, limit=False, debug=False):
         print(f"\nJSON:\n{pprint.pformat(json_list, compact=True)}")
         print(f"\nClauses:\n{pprint.pformat(clauses, compact=True)}")
 
-    run_solver(logic, print_logic=True)
+    solver_binary = Path(__file__).resolve().parent / "solver" / "gk"
+    if platform.system() == "Linux" and solver_binary.is_file():
+        run_solver(logic, print_logic=True)
+    else:
+        print(f"\nLogical form:\n{pprint.pformat(logic, compact=True)}")
+        print("Solver skipped: bundled solver/gk requires Linux.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Convert passage to logical form.')
-    parser.add_argument("passage", nargs="?")
+    parser.add_argument("passage", nargs="?", help="Passage text for --reload, or a cache JSON path for --load.")
     parser.add_argument("-r", "--reload", action='store_true',
                         help="Re-create and fetch parse graphs from server.")
     parser.add_argument("-x", "--clear", action='store_true', help="Clear console output.")
@@ -175,29 +183,41 @@ if __name__ == "__main__":
     if args.clear:
         os.system("clear")
 
-    file = f"./data/{config.cache_file}.json"
-    print("File:", file)
+    project_dir = Path(__file__).resolve().parent
+    data_dir = project_dir / "data"
+    file = data_dir / f"{config.cache_file}.json"
 
     if args.load:
-        file = f'./data/{args.passage}.json'
+        if not passage:
+            parser.error("--load requires a cache name or JSON path")
+        file = Path(passage)
+        if not file.exists():
+            file = data_dir / f"{passage.removesuffix('.json')}.json"
         if not os.path.exists(file):
-            print(f"ERROR: Data file {file} does not exist.")
-            sys.exit(-1)
+            parser.error(f"Data file {file} does not exist")
 
         print(f"Loading: {file}")
         with open(file) as f:
             passage_meta = json.load(f)
 
     elif args.reload or args.save:
+        if not passage:
+            parser.error("--reload and --save require passage text")
         passage_meta = api.fetch_parse_from_server(passage)
-        file = f'./data/{config.cache_file}.json'
+        file = data_dir / f"{config.cache_file}.json"
         if args.save:
-            file = f'./data/{args.save}.json'
+            file = data_dir / f'{args.save}.json'
         with open(file, 'w') as f:
             json.dump(passage_meta, f, indent=2)
             logger.info("Saved passage meta.")
 
     else:
+        if not file.exists():
+            cached_files = list((project_dir / "server" / "cache").glob("*.json"))
+            if not cached_files:
+                parser.error(f"Default cache {file} does not exist; use --load PATH to read a cached parse")
+            file = max(cached_files, key=lambda path: path.stat().st_mtime)
+            print(f"Loading latest server cache: {file}")
         with open(file) as f:
             passage_meta = json.load(f)
 

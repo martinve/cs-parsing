@@ -278,18 +278,17 @@ def from_amr(json_list, debug=False):
 
     json_list_to_logic(json_list, config.debug_graph_construction)
 
-    json_logic = logic_lst
+    def normalize_clause(clause):
+        if not isinstance(clause, list):
+            return clause
+        return [item.lower() if index == 0 and isinstance(item, str)
+                else normalize_clause(item) if isinstance(item, list) else item
+                for index, item in enumerate(clause)]
 
-    outp = str(json_logic)
-    outp = outp.lower()
-    outp = outp.replace("'", "\"")
-    outp = json.loads(outp)
+    outp = [normalize_clause(clause) for clause in logic_lst]
 
     if debug:
-        # print("--- LOGIC (", len(json_logic), ")---")
-        # pprint.pprint(json_logic)
         print(f"--- CLAUSES --- ({len(outp)})")
         pprint.pprint(outp, indent=2)
 
-    # outp = json.loads(outp)
     return outp

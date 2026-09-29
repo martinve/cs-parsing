@@ -8,6 +8,10 @@ import persist
 import settings as cnf
 from models import Base
 
+SERVER_DIR = os.path.dirname(os.path.abspath(__file__))
+bottle.TEMPLATE_PATH.insert(0, os.path.join(SERVER_DIR, "views"))
+PUBLIC_DIR = os.path.join(SERVER_DIR, "public")
+
 db_directory = os.path.dirname(cnf.dbfile)
 if db_directory:
     os.makedirs(db_directory, exist_ok=True)
@@ -29,11 +33,11 @@ def is_authenticated_user(db, user, password):
 
 @error(404)
 def error404():
-    return static_file("error.html", root='./public')
+    return static_file("error.html", root=PUBLIC_DIR)
 
 
 def serve_static(filename):
-    return static_file(filename, root='public/')
+    return static_file(filename, root=PUBLIC_DIR)
 
 
 def setup_routing(app):
