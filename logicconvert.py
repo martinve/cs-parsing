@@ -70,7 +70,7 @@ def get_sentence_clauses(sent, idx, debug=True, ud_shift=False, json_ld_logic=Tr
     snt_type = snt_clf.predict_snt_type(ud, explain=False)
     question = is_question(sent['sentence'])
 
-    print("Snt type: ", snt_type)
+    print("Snt type: ", snt_type, snt_clf.snt_type_label(snt_type))
 
     ud_root = udutil.get_root(ud)
     amr_root = amrutil.get_root(json_list)
@@ -87,8 +87,16 @@ def get_sentence_clauses(sent, idx, debug=True, ud_shift=False, json_ld_logic=Tr
 
     # assert(amr_root is not None)
 
-    if ud_root["lemma"] != amr_root["lemma"] or ud_root["upos"] != amr_root["upos"]:
-      cur_context["root_mismatch"] = True
+    
+    def has_amr_ud_root_mismatch(amr_root, ud_root):
+        if ud_root["lemma"] != amr_root["lemma"]:
+            return True
+        if ud_root["upos"] != amr_root["upos"]:
+            return True
+        return False
+    
+
+    cur_context["root_mismatch"] = has_amr_ud_root_mismatch(amr_root, ud_root)
 
     assert (type(cur_context) == dict)
 
@@ -224,3 +232,5 @@ if __name__ == "__main__":
     debug = config.debug_clauses
 
     main(passage_meta, args.limit, debug)
+
+
