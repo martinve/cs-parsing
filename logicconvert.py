@@ -37,6 +37,13 @@ def is_question(snt):
     return snt.endswith("?")
 
 
+def has_amr_ud_root_mismatch(amr_root, ud_root):
+    if ud_root["lemma"] != amr_root["lemma"]:
+        return True
+    if ud_root["upos"] != amr_root["upos"]:
+        return True
+    return False
+
 def get_sentence_clauses(sent, idx, debug=True, ud_shift=False, json_ld_logic=True):
 
     amr = sent["semparse"]["amr"]
@@ -88,12 +95,7 @@ def get_sentence_clauses(sent, idx, debug=True, ud_shift=False, json_ld_logic=Tr
     # assert(amr_root is not None)
 
     
-    def has_amr_ud_root_mismatch(amr_root, ud_root):
-        if ud_root["lemma"] != amr_root["lemma"]:
-            return True
-        if ud_root["upos"] != amr_root["upos"]:
-            return True
-        return False
+  
     
 
     cur_context["root_mismatch"] = has_amr_ud_root_mismatch(amr_root, ud_root)
@@ -146,13 +148,14 @@ def main(passage_raw, limit=False, debug=False):
     logic = []
     question = None
 
+    sentences = passage_raw["sentences"]
     if limit:
-        passage_raw["sentences"] = passage_raw["sentences"][:limit]
+        sentences = sentences[:limit]
         print("Limit:", limit)
 
     context = []
 
-    for idx, sent in enumerate(passage_raw['sentences']):
+    for idx, sent in enumerate(sentences):
         clauses, snt_ctx = get_sentence_clauses(sent, idx, debug=False, ud_shift=True)
         logic.extend(clauses)
         context.append(snt_ctx)
@@ -186,7 +189,13 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--limit", type=int, help="If set only specified number of sentences are processed.")
     args = parser.parse_args()
 
+
     passage = args.passage
+
+
+    # print("Args:", args)
+    # print("Passage:", passage)
+    # sys.exit("Exiting.")
 
     if args.clear:
         os.system("clear")
